@@ -1,0 +1,2 @@
+@zkevm/=lib/zkevm-contracts/contracts/
+@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/
