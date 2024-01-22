@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.23;
+pragma solidity ^0.8.20;
 
 import "@zkevm/interfaces/IPolygonZkEVMBridge.sol";
 
@@ -13,7 +13,7 @@ struct ClaimProofData {
 
 /// @title
 /// @notice
-contract BridgeAndCall {
+contract BridgeExtension {
     IPolygonZkEVMBridge public bridge;
 
     constructor(address bridge_) {
@@ -24,11 +24,11 @@ contract BridgeAndCall {
 
     function bridgeAndCall(
         uint32 destinationNetwork,
+        address destinationAddress,
         address token,
         uint256 amount,
-        address destinationAddress,
-        bytes calldata metadata,
         bytes calldata permitData,
+        bytes calldata metadata,
         bool forceUpdateGlobalExitRoot
     ) external payable {
         bridge.bridgeAsset(
@@ -48,6 +48,8 @@ contract BridgeAndCall {
         );
     }
 
+    // TODO: break this down into 2 functions because frontrunning attacks on claimAsset can break this
+    // i.e. someone independently calls claimAsset - this function won't run anymore
     function claimBridgeAndCall(
         ClaimProofData calldata claimProofData,
         uint32 originNetwork,
@@ -92,5 +94,21 @@ contract BridgeAndCall {
         {} catch {
             // TODO: return asset
         }
+    }
+
+    function onMessageReceived(
+        address,
+        uint32,
+        bytes calldata data
+    ) external payable {
+        // TODO: validations etc
+        // origin network == source network
+        // origin address == source bridge extension
+
+        // TODO: decode data and do a dynamic call
+        address targetContract = abi.decode(data[:20], (address));
+
+        (bool success, ) = targetContract.call(data[19:]);
+        require(success);
     }
 }
