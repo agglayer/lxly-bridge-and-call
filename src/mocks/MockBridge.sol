@@ -73,7 +73,8 @@ contract MockBridge is DepositContract, EmergencyManager, IPolygonZkEVMBridge {
     // PolygonZkEVM address
     address public polygonZkEVMaddress;
 
-    BridgeMessage public lastBridgeMessage;
+    BridgeMessage public lastBridgeAssetMsg;
+    BridgeMessage public lastBridgeMessageMsg;
 
     /**
      * @param _networkID networkID
@@ -252,7 +253,7 @@ contract MockBridge is DepositContract, EmergencyManager, IPolygonZkEVMBridge {
             _updateGlobalExitRoot();
         }
 
-        lastBridgeMessage = BridgeMessage(
+        lastBridgeAssetMsg = BridgeMessage(
             originNetwork,
             originTokenAddress,
             destinationNetwork,
@@ -310,7 +311,7 @@ contract MockBridge is DepositContract, EmergencyManager, IPolygonZkEVMBridge {
             _updateGlobalExitRoot();
         }
 
-        lastBridgeMessage = BridgeMessage(
+        lastBridgeMessageMsg = BridgeMessage(
             networkID,
             msg.sender,
             destinationNetwork,

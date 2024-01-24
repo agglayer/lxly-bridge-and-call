@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import {IERC20} from "forge-std/interfaces/IERC20.sol";
 import {Test, console} from "forge-std/Test.sol";
+import {IERC20} from "forge-std/interfaces/IERC20.sol";
 import {BridgeExtension} from "../src/BridgeExtension.sol";
 import {MockBridge} from "../src/mocks/MockBridge.sol";
 import {DemoL1SenderDynamicCall} from "../src/demo/DemoL1Sender.sol";
 import {DemoL2Receiver} from "../src/demo/DemoL2Receiver.sol";
 
-contract BridgeAndCallTest is Test {
+contract BridgeAndCall is Test {
     uint256 internal _l1Fork;
     uint256 internal _l2Fork;
     uint32 internal _l1NetworkId;
@@ -36,27 +36,31 @@ contract BridgeAndCallTest is Test {
 
         // retrieve the addresses
         _bridge = vm.envAddress("ADDRESS_LXLY_BRIDGE");
-        _deployer = vm.addr(0);
-        _alice = vm.addr(1);
-        _bob = vm.addr(2);
-        _claimer = vm.addr(9);
-
         _usdc = vm.envAddress("ADDRESS_L1_USDC");
         _matic = vm.envAddress("ADDRESS_L2_MATIC");
+
+        _alice = vm.addr(1);
+        _bob = vm.addr(2);
+        _claimer = vm.addr(8);
+        _deployer = vm.addr(9);
 
         // deploy and init contracts
         _deployMockBridge();
         _deployContracts();
 
         // fund alice with 1M L1 USDC
-        vm.selectFork(_l1Fork);
-        deal(_usdc, _alice, 10 ** 6 * 10 ** 6);
-        // fund claimer with 1M L2 ETH
-        vm.selectFork(_l2Fork);
-        deal(_claimer, 10 ** 6 * 10 ** 18);
+        _dealUSDC(_alice, 1000000);
     }
 
-    function _deployMockBridge() internal virtual {
+    function _dealUSDC(address target, uint256 amountInUsd) internal {
+        vm.startPrank(0xD6153F5af5679a75cC85D8974463545181f48772); // USDC WHALE
+        vm.selectFork(_l1Fork);
+        IERC20(_usdc).transfer(target, amountInUsd * 10 ** 6);
+        vm.stopPrank();
+    }
+
+    function _deployMockBridge() internal {
+        vm.startPrank(_deployer);
         vm.selectFork(_l1Fork);
         MockBridge mb1 = new MockBridge();
         bytes memory mb1Code = address(mb1).code;
@@ -66,9 +70,10 @@ contract BridgeAndCallTest is Test {
         MockBridge mb2 = new MockBridge();
         bytes memory mb2Code = address(mb2).code;
         vm.etch(_bridge, mb2Code);
+        vm.stopPrank();
     }
 
-    function _deployContracts() internal virtual {
+    function _deployContracts() internal {
         vm.startPrank(_deployer);
 
         // deploy L1 Bridge Extension
@@ -101,7 +106,7 @@ contract BridgeAndCallTest is Test {
             address destinationAddress,
             uint256 amount,
             bytes memory metadata
-        ) = b.lastBridgeMessage();
+        ) = b.lastBridgeMessageMsg();
         // proof can be empty because our MockBridge bypasses the merkle tree verification
         // i.e. _verifyLeaf is always successful
         bytes32[32] memory proof;
@@ -132,7 +137,7 @@ contract BridgeAndCallTest is Test {
             address destinationAddress,
             uint256 amount,
             bytes memory metadata
-        ) = b.lastBridgeMessage();
+        ) = b.lastBridgeAssetMsg();
         // proof and index can be empty because our MockBridge bypasses the merkle tree verification
         // i.e. _verifyLeaf is always successful
         bytes32[32] memory proof;
@@ -169,13 +174,18 @@ contract BridgeAndCallTest is Test {
         );
         vm.stopPrank();
 
-        // mine a few blocks
-        // TODO
+        // check that bob doesn't have any matic yet
+        vm.selectFork(_l2Fork);
+        assertEq(IERC20(_matic).balanceOf(_bob), 0);
 
         // claimer claims the asset+message
         vm.startPrank(_claimer);
         _claimAsset(_l1Fork, _l2Fork);
         _claimMessage(_l1Fork, _l2Fork);
         vm.stopPrank();
+
+        // check that the swap happened and bob got the matic
+        vm.selectFork(_l2Fork);
+        assertGt(IERC20(_matic).balanceOf(_bob), 0);
     }
 }

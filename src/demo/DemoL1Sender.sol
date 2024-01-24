@@ -2,6 +2,17 @@
 pragma solidity ^0.8.20;
 
 import "../BridgeExtension.sol";
+import {IERC20} from "forge-std/interfaces/IERC20.sol";
+
+struct ExactInputSingleParams {
+    address tokenIn;
+    address tokenOut;
+    address recipient;
+    uint256 deadline;
+    uint256 amountIn;
+    uint256 amountOutMinimum;
+    uint160 limitSqrtPrice;
+}
 
 contract DemoL1SenderDynamicCall {
     BridgeExtension public originNetworkBridgeExtension;
@@ -28,22 +39,25 @@ contract DemoL1SenderDynamicCall {
         address receiver
     ) external {
         // dynamic function call into QuickSwap
-        originNetworkBridgeExtension.bridgeAndCall(
-            destinationNetwork,
-            destinationBridgeExtension,
-            sourceToken,
-            amountToSpend,
-            abi.encode(
-                0xF6Ad3CcF71Abb3E12beCf6b3D2a74C963859ADCd, // QuickSwap SwapRouter
-                // function selector
+        IERC20(sourceToken).transferFrom(
+            msg.sender,
+            address(originNetworkBridgeExtension),
+            amountToSpend
+        );
+
+        // calldata format
+        // first 20 bytes are the target contract's address
+        // remaining bytes are encoded with selector - the function selector + arguments
+        bytes memory callData = abi.encodePacked(
+            0xF6Ad3CcF71Abb3E12beCf6b3D2a74C963859ADCd, // QuickSwap SwapRouter
+            abi.encodeWithSelector( // function selector
                 bytes4(
                     keccak256(
-                        "exactInputSingle(ISwapRouter.ExactInputSingleParams)"
+                        "exactInputSingle((address,address,address,uint256,uint256,uint256,uint160))"
                     )
                 ),
-                // ExactInputSingleParams
-                abi.encode(
-                    sourceToken,
+                ExactInputSingleParams(
+                    0xA8CE8aee21bC2A48a5EF670afCc9274C7bbbC035, // bridge wrapped usdc
                     targetToken,
                     receiver,
                     block.timestamp + 86400,
@@ -51,43 +65,17 @@ contract DemoL1SenderDynamicCall {
                     0,
                     0
                 )
-            ),
+            )
+        );
+
+        originNetworkBridgeExtension.bridgeAndCall(
+            destinationNetwork,
+            destinationBridgeExtension,
+            sourceToken,
+            amountToSpend,
+            callData,
             permitData,
             true
         );
     }
-}
-
-contract DemoL1SenderMessageReceiver {
-    BridgeExtension public bridgeExtension;
-    uint32 public destinationNetwork;
-    address public destinationAddress;
-
-    constructor(address bridgeExtension_, uint32 destinationNetwork_) {
-        bridgeExtension = BridgeExtension(bridgeExtension_);
-        destinationNetwork = destinationNetwork_; // L2
-    }
-
-    function setDestinationAddress(address destinationAddress_) external {
-        // TODO: onlyOwner etc
-        destinationAddress = destinationAddress_;
-    }
-
-    // function buyL2TokenWithL1Token(
-    //     address sourceToken,
-    //     address targetToken,
-    //     uint256 amountToSpend,
-    //     bytes calldata permitData
-    // ) external {
-    //     // DemoL2Receiver gets called
-    //     bridgeExtension.bridgeAndCall(
-    //         destinationNetwork,
-    //         sourceToken,
-    //         amountToSpend,
-    //         destinationAddress,
-    //         abi.encode(targetToken),
-    //         permitData,
-    //         true
-    //     );
-    // }
 }

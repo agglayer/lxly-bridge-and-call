@@ -2,6 +2,9 @@
 pragma solidity ^0.8.20;
 
 import "@zkevm/interfaces/IPolygonZkEVMBridge.sol";
+import {IERC20} from "forge-std/interfaces/IERC20.sol";
+
+import "forge-std/console.sol";
 
 // to bypass stack too deep
 struct ClaimProofData {
@@ -27,10 +30,11 @@ contract BridgeExtension {
         address destinationAddress,
         address token,
         uint256 amount,
-        bytes calldata permitData,
         bytes calldata metadata,
+        bytes calldata permitData,
         bool forceUpdateGlobalExitRoot
     ) external payable {
+        IERC20(token).approve(address(bridge), amount);
         bridge.bridgeAsset(
             destinationNetwork,
             destinationAddress,
@@ -101,14 +105,27 @@ contract BridgeExtension {
         uint32,
         bytes calldata data
     ) external payable {
-        // TODO: validations etc
+        console.log("HELLO!");
         // origin network == source network
         // origin address == source bridge extension
 
         // TODO: decode data and do a dynamic call
-        address targetContract = abi.decode(data[:20], (address));
+        // the first 20 bytes are the target contract's address
+        address targetContract;
+        bytes memory addrData = data[:20]; // data is in calldata, assembly works with memory
+        assembly {
+            targetContract := mload(add(addrData, 20))
+        }
 
-        (bool success, ) = targetContract.call(data[19:]);
+        // TODO: TEMP - remove
+        IERC20(0xA8CE8aee21bC2A48a5EF670afCc9274C7bbbC035).approve(
+            targetContract,
+            1000 * 10 ** 6
+        );
+
+        // make the dynamic call to the contract
+        // the remaining bytes have the selector+args
+        (bool success, ) = targetContract.call(data[20:]);
         require(success);
     }
 }
