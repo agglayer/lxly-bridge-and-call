@@ -9,6 +9,9 @@ contract DemoL2Receiver {
         bytes memory data
     ) external payable {
         // approve bridge wrapped usdc to be used by quickswap router
+        // NOTE: hardcoding these values because the args are all encoded
+        // since this does a dynamic invocation to QuickSwap's router
+        // for production, a receiver contract should take explicit parameters
         IERC20(0xA8CE8aee21bC2A48a5EF670afCc9274C7bbbC035).approve(
             quickswapRouter,
             1000 * 10 ** 6
@@ -33,18 +36,18 @@ contract DemoL2Receiver {
     }
 }
 
-interface ISwapRouter {
-    struct ExactInputSingleParams {
-        address tokenIn;
-        address tokenOut;
-        address recipient;
-        uint256 deadline;
-        uint256 amountIn;
-        uint256 amountOutMinimum;
-        uint160 limitSqrtPrice;
-    }
+// interface ISwapRouter {
+//     struct ExactInputSingleParams {
+//         address tokenIn;
+//         address tokenOut;
+//         address recipient;
+//         uint256 deadline;
+//         uint256 amountIn;
+//         uint256 amountOutMinimum;
+//         uint160 limitSqrtPrice;
+//     }
 
-    function exactInputSingle(
-        ExactInputSingleParams calldata params
-    ) external payable returns (uint256 amountOut);
-}
+//     function exactInputSingle(
+//         ExactInputSingleParams calldata params
+//     ) external payable returns (uint256 amountOut);
+// }

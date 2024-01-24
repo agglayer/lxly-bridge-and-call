@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
 import "../BridgeExtension.sol";
-import {IERC20} from "forge-std/interfaces/IERC20.sol";
 
 struct ExactInputSingleParams {
     address tokenIn;
@@ -14,48 +15,59 @@ struct ExactInputSingleParams {
     uint160 limitSqrtPrice;
 }
 
+/// @notice Demo contract that triggers `bridgeAndCall` through `buyL2TokenWithL1Token`.
 contract DemoL1SenderDynamicCall {
-    BridgeExtension public originNetworkBridgeExtension;
-    address public destinationBridgeExtension;
-    uint32 public destinationNetwork;
-    address public destinationAddress;
+    using SafeERC20 for IERC20;
+
+    /// @notice The Bridge Extension in L1 (origin network).
+    BridgeExtension public l1BridgeExtension;
+
+    /// @notice The Bridge Extension address in L2 (destination network).
+    address public l2BridgeExtension;
+
+    /// @notice The destination network id.
+    uint32 public l2NetworkId;
+
+    /// @notice The address of the contract that will receive the assets, and ultimately get called.
+    address public l2Receiver;
 
     constructor(
-        uint32 destinationNetwork_,
-        address originNetworkBridgeExtension_,
-        address destinationBridgeExtension_,
-        address destinationAddress_
+        uint32 l2NetworkId_,
+        address l1BridgeExtension_,
+        address l2BridgeExtension_,
+        address l2Receiver_
     ) {
-        destinationNetwork = destinationNetwork_; // L2
-        originNetworkBridgeExtension = BridgeExtension(
-            originNetworkBridgeExtension_
-        );
-        destinationBridgeExtension = destinationBridgeExtension_;
-        destinationAddress = destinationAddress_;
+        l2NetworkId = l2NetworkId_;
+        l1BridgeExtension = BridgeExtension(l1BridgeExtension_);
+        l2BridgeExtension = l2BridgeExtension_;
+        l2Receiver = l2Receiver_;
     }
 
     function buyL2TokenWithL1Token(
-        address sourceToken,
-        address targetToken,
+        address l1Token,
+        address l2Token,
         uint256 amountToSpend,
         bytes calldata permitData,
         address receiver
     ) external {
-        IERC20(sourceToken).transferFrom(
+        // transfer the assets from the caller to this contract (the extension will take it from here)
+        IERC20(l1Token).safeTransferFrom(
             msg.sender,
-            address(originNetworkBridgeExtension),
+            address(this),
             amountToSpend
         );
+        // allow the extension to take the assets
+        IERC20(l1Token).approve(address(l1BridgeExtension), amountToSpend);
 
         // calldata format
         // first 20 bytes are the target contract's address
         // remaining bytes are encodedWithSelector: the function selector + arguments
 
-        // this specific example has a nested dynamic call
+        // this specific demo has a nested dynamic call, just to show that it's possible
         // 1st call goes to the receiver contract
         // 2nd call goes to the quickswap router
         bytes memory callData = abi.encodePacked(
-            destinationAddress, // the receiver contract in L2
+            l2Receiver, // the receiver contract in L2
             abi.encodeWithSelector(
                 bytes4(keccak256("approveAndQuickSwap(address,bytes)")),
                 0xF6Ad3CcF71Abb3E12beCf6b3D2a74C963859ADCd, // QuickSwap SwapRouter
@@ -67,7 +79,7 @@ contract DemoL1SenderDynamicCall {
                     ),
                     ExactInputSingleParams(
                         0xA8CE8aee21bC2A48a5EF670afCc9274C7bbbC035, // bridge wrapped usdc
-                        targetToken,
+                        l2Token,
                         receiver,
                         block.timestamp + 86400,
                         amountToSpend,
@@ -78,11 +90,11 @@ contract DemoL1SenderDynamicCall {
             )
         );
 
-        originNetworkBridgeExtension.bridgeAndCall(
-            destinationNetwork,
-            destinationAddress, // l2 receiver contract gets the asset
-            destinationBridgeExtension, // l2 bridge extension gets the message
-            sourceToken,
+        l1BridgeExtension.bridgeAndCall(
+            l2NetworkId,
+            l2Receiver, // assets go to l2 receiver contract
+            l2BridgeExtension, // message goes to l2 bridge extension
+            l1Token,
             amountToSpend,
             callData,
             permitData,
