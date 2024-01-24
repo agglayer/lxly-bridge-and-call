@@ -27,7 +27,8 @@ contract BridgeExtension {
 
     function bridgeAndCall(
         uint32 destinationNetwork,
-        address destinationAddress,
+        address destinationAddressAsset,
+        address destinationAddressMessage,
         address token,
         uint256 amount,
         bytes calldata metadata,
@@ -37,7 +38,7 @@ contract BridgeExtension {
         IERC20(token).approve(address(bridge), amount);
         bridge.bridgeAsset(
             destinationNetwork,
-            destinationAddress,
+            destinationAddressAsset,
             amount,
             token,
             forceUpdateGlobalExitRoot,
@@ -46,7 +47,7 @@ contract BridgeExtension {
 
         bridge.bridgeMessage(
             destinationNetwork,
-            destinationAddress,
+            destinationAddressMessage,
             forceUpdateGlobalExitRoot,
             metadata
         );
@@ -105,23 +106,17 @@ contract BridgeExtension {
         uint32,
         bytes calldata data
     ) external payable {
-        console.log("HELLO!");
+        // TODO:
         // origin network == source network
         // origin address == source bridge extension
 
-        // TODO: decode data and do a dynamic call
+        // decode data and do a dynamic call
         // the first 20 bytes are the target contract's address
         address targetContract;
         bytes memory addrData = data[:20]; // data is in calldata, assembly works with memory
         assembly {
             targetContract := mload(add(addrData, 20))
         }
-
-        // TODO: TEMP - remove
-        IERC20(0xA8CE8aee21bC2A48a5EF670afCc9274C7bbbC035).approve(
-            targetContract,
-            1000 * 10 ** 6
-        );
 
         // make the dynamic call to the contract
         // the remaining bytes have the selector+args

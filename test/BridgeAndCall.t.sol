@@ -26,6 +26,7 @@ contract BridgeAndCall is Test {
     BridgeExtension internal _l1BridgeExtension;
     BridgeExtension internal _l2BridgeExtension;
     DemoL1SenderDynamicCall internal _l1SenderContract;
+    DemoL2Receiver internal _l2ReceiverContract;
 
     function setUp() public {
         // create the forks
@@ -83,13 +84,15 @@ contract BridgeAndCall is Test {
         // deploy L2 Bridge Extension
         vm.selectFork(_l2Fork);
         _l2BridgeExtension = new BridgeExtension(_bridge);
+        _l2ReceiverContract = new DemoL2Receiver();
 
         // deploy DemoL1Sender
         vm.selectFork(_l1Fork);
         _l1SenderContract = new DemoL1SenderDynamicCall(
+            _l2NetworkId,
             address(_l1BridgeExtension),
             address(_l2BridgeExtension),
-            _l2NetworkId
+            address(_l2ReceiverContract)
         );
 
         vm.stopPrank();
@@ -169,7 +172,7 @@ contract BridgeAndCall is Test {
             _usdc,
             _matic,
             amount,
-            "",
+            "", // no permit data
             _bob
         );
         vm.stopPrank();
@@ -186,6 +189,6 @@ contract BridgeAndCall is Test {
 
         // check that the swap happened and bob got the matic
         vm.selectFork(_l2Fork);
-        assertGt(IERC20(_matic).balanceOf(_bob), 0);
+        assertGt(IERC20(_matic).balanceOf(_bob), 1000 * 10 ** 18); // can be assured cause 1USDC > 1MATIC
     }
 }
