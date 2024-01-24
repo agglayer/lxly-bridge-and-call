@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import {Test, console} from "forge-std/Test.sol";
 import {IERC20} from "forge-std/interfaces/IERC20.sol";
-import {BridgeExtension} from "../src/BridgeExtension.sol";
+import {BridgeExtension, ClaimProofData} from "../src/BridgeExtension.sol";
 import {MockBridge} from "../src/mocks/MockBridge.sol";
 import {DemoL1SenderDynamicCall} from "../src/demo/DemoL1Sender.sol";
 import {DemoL2Receiver} from "../src/demo/DemoL2Receiver.sol";
@@ -53,6 +53,8 @@ contract BridgeAndCall is Test {
         _dealUSDC(_alice, 1000000);
     }
 
+    // HELPERS
+
     function _dealUSDC(address target, uint256 amountInUsd) internal {
         vm.startPrank(0xD6153F5af5679a75cC85D8974463545181f48772); // USDC WHALE
         vm.selectFork(_l1Fork);
@@ -79,12 +81,24 @@ contract BridgeAndCall is Test {
 
         // deploy L1 Bridge Extension
         vm.selectFork(_l1Fork);
-        _l1BridgeExtension = new BridgeExtension(_bridge);
+        _l1BridgeExtension = new BridgeExtension(
+            _deployer,
+            _bridge,
+            _l2NetworkId
+        );
 
         // deploy L2 Bridge Extension
         vm.selectFork(_l2Fork);
-        _l2BridgeExtension = new BridgeExtension(_bridge);
+        _l2BridgeExtension = new BridgeExtension(
+            _deployer,
+            _bridge,
+            _l1NetworkId
+        );
         _l2ReceiverContract = new DemoL2Receiver();
+
+        _l2BridgeExtension.setCounterpartyExtension(
+            address(_l1BridgeExtension)
+        );
 
         // deploy DemoL1Sender
         vm.selectFork(_l1Fork);
@@ -95,41 +109,14 @@ contract BridgeAndCall is Test {
             address(_l2ReceiverContract)
         );
 
+        _l1BridgeExtension.setCounterpartyExtension(
+            address(_l2BridgeExtension)
+        );
+
         vm.stopPrank();
     }
 
-    function _claimMessage(uint256 from, uint256 to) internal {
-        MockBridge b = MockBridge(_bridge);
-
-        vm.selectFork(from);
-        (
-            uint32 originNetwork,
-            address originAddress,
-            uint32 destinationNetwork,
-            address destinationAddress,
-            uint256 amount,
-            bytes memory metadata
-        ) = b.lastBridgeMessageMsg();
-        // proof can be empty because our MockBridge bypasses the merkle tree verification
-        // i.e. _verifyLeaf is always successful
-        bytes32[32] memory proof;
-
-        vm.selectFork(to);
-        b.claimMessage(
-            proof,
-            uint32(b.depositCount()),
-            "",
-            "",
-            originNetwork,
-            originAddress,
-            destinationNetwork,
-            destinationAddress,
-            amount,
-            metadata
-        );
-    }
-
-    function _claimAsset(uint256 from, uint256 to) internal {
+    function _mockClaimAsset(uint256 from, uint256 to) internal {
         MockBridge b = MockBridge(_bridge);
 
         vm.selectFork(from);
@@ -141,13 +128,18 @@ contract BridgeAndCall is Test {
             uint256 amount,
             bytes memory metadata
         ) = b.lastBridgeAssetMsg();
+
         // proof and index can be empty because our MockBridge bypasses the merkle tree verification
         // i.e. _verifyLeaf is always successful
         bytes32[32] memory proof;
         uint32 index;
 
         vm.selectFork(to);
-        b.claimAsset(
+        BridgeExtension be;
+        if (to == _l1Fork) be = _l1BridgeExtension;
+        else be = _l2BridgeExtension;
+
+        be.claimAsset(
             proof,
             index,
             "",
@@ -161,13 +153,48 @@ contract BridgeAndCall is Test {
         );
     }
 
-    function test_buyL2TokenWithL1Token() public {
-        // alice issues a buy order in L1
+    function _mockClaimMessage(uint256 from, uint256 to) internal {
+        MockBridge b = MockBridge(_bridge);
+
+        vm.selectFork(from);
+        (
+            uint32 originNetwork,
+            address originAddress,
+            uint32 destinationNetwork,
+            address destinationAddress,
+            uint256 amount,
+            bytes memory metadata
+        ) = b.lastBridgeMessageMsg();
+
+        // proof can be empty because our MockBridge bypasses the merkle tree verification
+        // i.e. _verifyLeaf is always successful
+        bytes32[32] memory proof;
+        uint256[] memory indexes;
+
+        vm.selectFork(to);
+        BridgeExtension be;
+        if (to == _l1Fork) be = _l1BridgeExtension;
+        else be = _l2BridgeExtension;
+        be.claimMessage(
+            ClaimProofData(proof, uint32(b.depositCount()), "", ""),
+            indexes,
+            originNetwork,
+            originAddress,
+            destinationNetwork,
+            destinationAddress,
+            amount,
+            metadata
+        );
+    }
+
+    // TEST
+
+    function testBuyL2TokenWithL1Token() public {
+        // Alice issues a buy order in L1 of 1000 USDC, for L2 MATIC to be sent to Bob
         vm.selectFork(_l1Fork);
         vm.startPrank(_alice);
         uint256 amount = 1000 * 10 ** 6;
         IERC20(_usdc).approve(address(_l1SenderContract), amount);
-        // this bridges the assets and a message to L2 BridgeExtension
         _l1SenderContract.buyL2TokenWithL1Token(
             _usdc,
             _matic,
@@ -177,14 +204,14 @@ contract BridgeAndCall is Test {
         );
         vm.stopPrank();
 
-        // check that bob doesn't have any matic yet
+        // check that Bob doesn't have any L2 MATIC yet
         vm.selectFork(_l2Fork);
         assertEq(IERC20(_matic).balanceOf(_bob), 0);
 
-        // claimer claims the asset+message
+        // Claimer claims the asset+message - NOTE: mock byp
         vm.startPrank(_claimer);
-        _claimAsset(_l1Fork, _l2Fork);
-        _claimMessage(_l1Fork, _l2Fork);
+        _mockClaimAsset(_l1Fork, _l2Fork);
+        _mockClaimMessage(_l1Fork, _l2Fork);
         vm.stopPrank();
 
         // check that the swap happened and bob got the matic
