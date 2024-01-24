@@ -1,66 +1,29 @@
-## Foundry
+# LXLY BRIDGE AND CALL
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+## Testing and Deploying
 
-Foundry consists of:
+First, copy `.env.example` to `.env` and set the appropriate environment variables (annotated with TODOs).
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+### Testing (Mainnet Forks)
 
-## Documentation
+1. Start anvil: two instances required, one for L1, and one for L2
 
-https://book.getfoundry.sh/
+```bash
+# 1.1 start L1 (ethereum mainnet) anvil - NOTE: using port 8001 for L1
+anvil --fork-url <https://eth-mainnet.g.alchemy.com/v2/YOUR_ALCHEMY_KEY> --chain-id 1 --port 8001
 
-## Usage
-
-### Build
-
-```shell
-$ forge build
+# 1.2 start L2 (polygon zkevm) anvil - NOTE: using port 8101 for L2
+anvil --fork-url <https://polygonzkevm-mainnet.g.alchemy.com/v2/YOUR_ALCHEMY_KEY> --chain-id 1101 --port 8101
 ```
 
-### Test
+2. Run the tests
 
-```shell
-$ forge test
+```bash
+forge test -v
 ```
 
-### Format
+### Deployment (Mainnet Forks)
 
-```shell
-$ forge fmt
-```
-
-### Gas Snapshots
-
-```shell
-$ forge snapshot
-```
-
-### Anvil
-
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
+```bash
+forge script scripts/DeployInit.s.sol:DeployInit --broadcast -vvvv
 ```
