@@ -19,11 +19,9 @@ anvil --fork-url <https://polygonzkevm-mainnet.g.alchemy.com/v2/YOUR_ALCHEMY_KEY
 2. Run the tests
 
 ```bash
-forge test -v
+forge test -vvvvv
 ```
 
 ### Deployment (Mainnet Forks)
 
-```bash
-forge script scripts/DeployInit.s.sol:DeployInit --broadcast -vvvv
-```
+TODO
