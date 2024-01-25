@@ -1,22 +1,13 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "@zkevm/interfaces/IBridgeMessageReceiver.sol";
-import "@zkevm/interfaces/IPolygonZkEVMBridge.sol";
 import "@zkevm/PolygonZkEVMBridge.sol";
 
-import "forge-std/console.sol";
-
-/// @dev Used to bypass stack too deep.
-struct ClaimProofData {
-    bytes32[32] smtProof;
-    uint32 index;
-    bytes32 mainnetExitRoot;
-    bytes32 rollupExitRoot;
-}
+import {JumpPoint} from "./JumpPoint.sol";
 
 contract BridgeExtension is IBridgeMessageReceiver, Ownable {
     using SafeERC20 for IERC20;
@@ -47,115 +38,89 @@ contract BridgeExtension is IBridgeMessageReceiver, Ownable {
 
     /// @notice Bridge and call from this function.
     function bridgeAndCall(
-        uint32 destinationNetwork,
-        address destinationAddressAsset,
-        address destinationAddressMessage,
         address token,
         uint256 amount,
-        bytes calldata metadata,
         bytes calldata permitData,
+        uint32 destinationNetwork,
+        address callAddress,
+        bytes calldata callData,
         bool forceUpdateGlobalExitRoot
     ) external payable {
         // transfer assets from caller to this extension
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
 
+        // calculate the depends on index based on the number of bridgeAssets we're doing
+        uint256 dependsOnIndex = bridge.depositCount() + 1;
+
         // allow the bridge to take the assets
         IERC20(token).approve(address(bridge), amount);
+
+        // pre-compute the address of the JumpPoint contract so we can bridge the assets
+        address jumpPointAddr = _computeJumpPointAddress(
+            counterpartyExtension,
+            dependsOnIndex,
+            token,
+            callAddress,
+            callData
+        );
         // bridge the assets
         bridge.bridgeAsset(
             destinationNetwork,
-            destinationAddressAsset,
+            jumpPointAddr,
             amount,
             token,
             forceUpdateGlobalExitRoot,
             permitData
         );
 
-        // bridge the message
-        // TODO: open question!
-        // should we force the message to go to our counterparty extension?
-        // or do we allow users to send the message to a contract of their choice?
+        // assert that the index is correct - avoid any potential reentrancy caused by bridgeAsset
+        require(dependsOnIndex == bridge.depositCount(), "INVALID_INDEX");
+
+        // bridge the message (which gets encoded with extra data)
+        bytes memory encodedMsg = abi.encode(
+            dependsOnIndex,
+            callAddress,
+            token,
+            callData
+        );
         bridge.bridgeMessage(
             destinationNetwork,
-            destinationAddressMessage,
+            counterpartyExtension,
             forceUpdateGlobalExitRoot,
-            metadata
+            encodedMsg
         );
     }
 
-    /// @notice Just a wrapper around `PolygonZkEVMBridge.claimAsset(...)`.
-    function claimAsset(
-        bytes32[32] calldata smtProof, // _DEPOSIT_CONTRACT_TREE_DEPTH
-        uint32 index,
-        bytes32 mainnetExitRoot,
-        bytes32 rollupExitRoot,
-        uint32 originNetwork,
-        address originTokenAddress,
-        uint32 destinationNetwork,
-        address destinationAddress,
-        uint256 amount,
-        bytes calldata assetMetadata
-    ) external {
-        try
-            bridge.claimAsset(
-                smtProof,
-                index,
-                mainnetExitRoot,
-                rollupExitRoot,
-                originNetwork,
-                originTokenAddress,
-                destinationNetwork,
-                destinationAddress,
-                amount,
-                assetMetadata
+    /// @dev Helper function to pre-compute the jumppoint address (the contract pseudo-deployed using create2).
+    function _computeJumpPointAddress(
+        address deployer,
+        uint256 dependsOnIndex,
+        address originAssetAddress,
+        address callAddress,
+        bytes memory callData
+    ) internal view returns (address) {
+        bytes memory bytecode = abi.encodePacked(
+            type(JumpPoint).creationCode,
+            abi.encode(
+                address(bridge),
+                bridge.networkID(), // current network
+                originAssetAddress,
+                callAddress,
+                callData
             )
-        {} catch {
-            // TODO: TBD - do we even need to care?
-            // at this point, assets are locked in the origin network's bridge
-            // what do we do if we're unable to claim them from destination network's bridge?
-            // what's the current behavior of the bridge if unable to claimAsset?
-        }
-    }
+        );
 
-    /// @notice More than a wrapper, checks that required assets have been claimed,
-    /// before executing claimMessage.
-    function claimMessage(
-        ClaimProofData calldata claimProofData,
-        uint256[] calldata dependsOnIndexes,
-        uint32 originNetwork,
-        address originAddress,
-        uint32 destinationNetwork,
-        address destinationAddress,
-        uint256 amount,
-        bytes calldata messageMetadata
-    ) external {
-        // assert that all dependencies have been claimed
-        for (uint256 i = 0; i < dependsOnIndexes.length; i++) {
-            require(
-                bridge.isClaimed(dependsOnIndexes[i]),
-                "DEPENDENCY_NOT_CLAIMED"
-            );
-        }
-
-        try
-            bridge.claimMessage(
-                claimProofData.smtProof,
-                claimProofData.index,
-                claimProofData.mainnetExitRoot,
-                claimProofData.rollupExitRoot,
-                originNetwork,
-                originAddress,
-                destinationNetwork,
-                destinationAddress,
-                amount,
-                messageMetadata
+        // precompute address that will be the receiver of the assets
+        bytes32 hash = keccak256(
+            abi.encodePacked(
+                bytes1(0xff),
+                deployer, // deployer = counterparty bridge extension OR "this"
+                bytes32(dependsOnIndex), // salt = the depends on index
+                keccak256(bytecode)
             )
-        {} catch {
-            // TODO: in case of error, transfer assets to fallback address
-            // TODO: how to find the assets related to this message? can we get that through the indexes?
-            // TODO: where is the fallback address? we could encode it into the message metadata?
-            // NOTE: we must first VERIFY leaf and only then decode the fallback address from the messageMetadata to avoid attackers
-        }
+        );
+        // cast last 20 bytes of hash to address
+        return address(uint160(uint(hash)));
     }
 
     /// @notice `IBridgeMessageReceiver`'s callback. This is only executed if `bridgeAndCall`'s
@@ -169,17 +134,22 @@ contract BridgeExtension is IBridgeMessageReceiver, Ownable {
         require(originNetwork == counterpartyNetwork, "INVALID_NETWORK");
         require(originAddress == counterpartyExtension, "INVALID_ADDRESS");
 
-        // decode data and do a dynamic call
-        // the first 20 bytes are the target contract's address
-        address targetContract;
-        bytes memory addrData = data[:20]; // data is in calldata, assembly works with memory
-        assembly {
-            targetContract := mload(add(addrData, 20))
-        }
+        // decode the index for bridgeAsset, and check that it has been claimed
+        (
+            uint256 dependsOnIndex,
+            address callAddress,
+            address originAssetAddress,
+            bytes memory callData
+        ) = abi.decode(data, (uint256, address, address, bytes));
+        require(bridge.isClaimed(dependsOnIndex), "UNCLAIMED_ASSET");
 
-        // make the dynamic call to the contract
         // the remaining bytes have the selector+args
-        (bool success, ) = targetContract.call(data[20:]);
-        require(success);
+        new JumpPoint{salt: bytes32(dependsOnIndex)}(
+            address(bridge),
+            originNetwork,
+            originAssetAddress,
+            callAddress,
+            callData
+        );
     }
 }

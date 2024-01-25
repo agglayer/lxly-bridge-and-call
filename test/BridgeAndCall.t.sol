@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import {Test, console} from "forge-std/Test.sol";
 import {IERC20} from "forge-std/interfaces/IERC20.sol";
-import {BridgeExtension, ClaimProofData} from "../src/BridgeExtension.sol";
+import {BridgeExtension} from "../src/BridgeExtension.sol";
 import {MockBridge} from "../src/mocks/MockBridge.sol";
 import {DemoL1SenderDynamicCall} from "../src/demo/DemoL1Sender.sol";
 import {DemoL2Receiver} from "../src/demo/DemoL2Receiver.sol";
@@ -135,11 +135,7 @@ contract BridgeAndCall is Test {
         uint32 index;
 
         vm.selectFork(to);
-        BridgeExtension be;
-        if (to == _l1Fork) be = _l1BridgeExtension;
-        else be = _l2BridgeExtension;
-
-        be.claimAsset(
+        b.claimAsset(
             proof,
             index,
             "",
@@ -169,15 +165,13 @@ contract BridgeAndCall is Test {
         // proof can be empty because our MockBridge bypasses the merkle tree verification
         // i.e. _verifyLeaf is always successful
         bytes32[32] memory proof;
-        uint256[] memory indexes;
 
         vm.selectFork(to);
-        BridgeExtension be;
-        if (to == _l1Fork) be = _l1BridgeExtension;
-        else be = _l2BridgeExtension;
-        be.claimMessage(
-            ClaimProofData(proof, uint32(b.depositCount()), "", ""),
-            indexes,
+        b.claimMessage(
+            proof,
+            uint32(b.depositCount()),
+            "",
+            "",
             originNetwork,
             originAddress,
             destinationNetwork,

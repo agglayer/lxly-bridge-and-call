@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -59,45 +59,39 @@ contract DemoL1SenderDynamicCall {
         // allow the extension to take the assets
         IERC20(l1Token).approve(address(l1BridgeExtension), amountToSpend);
 
-        // calldata format
-        // first 20 bytes are the target contract's address
-        // remaining bytes are encodedWithSelector: the function selector + arguments
+        // callData is just encodedWithSelector: the function selector + arguments
 
         // this specific demo has a nested dynamic call, just to show that it's possible
         // 1st call goes to the receiver contract
         // 2nd call goes to the quickswap router
-        bytes memory callData = abi.encodePacked(
-            l2Receiver, // the receiver contract in L2
-            abi.encodeWithSelector(
-                bytes4(keccak256("approveAndQuickSwap(address,bytes)")),
-                0xF6Ad3CcF71Abb3E12beCf6b3D2a74C963859ADCd, // QuickSwap SwapRouter
-                abi.encodeWithSelector( // function selector
-                    bytes4(
-                        keccak256(
-                            "exactInputSingle((address,address,address,uint256,uint256,uint256,uint160))"
-                        )
-                    ),
-                    ExactInputSingleParams(
-                        0xA8CE8aee21bC2A48a5EF670afCc9274C7bbbC035, // bridge wrapped usdc
-                        l2Token,
-                        receiver,
-                        block.timestamp + 86400,
-                        amountToSpend,
-                        0,
-                        0
+        bytes memory callData = abi.encodeWithSelector(
+            bytes4(keccak256("approveAndQuickSwap(address,bytes)")),
+            0xF6Ad3CcF71Abb3E12beCf6b3D2a74C963859ADCd, // QuickSwap SwapRouter
+            abi.encodeWithSelector( // function selector
+                bytes4(
+                    keccak256(
+                        "exactInputSingle((address,address,address,uint256,uint256,uint256,uint160))"
                     )
+                ),
+                ExactInputSingleParams(
+                    0xA8CE8aee21bC2A48a5EF670afCc9274C7bbbC035, // bridge wrapped usdc
+                    l2Token,
+                    receiver,
+                    block.timestamp + 86400,
+                    amountToSpend,
+                    0,
+                    0
                 )
             )
         );
 
         l1BridgeExtension.bridgeAndCall(
-            l2NetworkId,
-            l2Receiver, // assets go to l2 receiver contract
-            l2BridgeExtension, // message goes to l2 bridge extension
             l1Token,
             amountToSpend,
-            callData,
             permitData,
+            l2NetworkId,
+            l2Receiver, // the receiver contract in L2
+            callData,
             true
         );
     }

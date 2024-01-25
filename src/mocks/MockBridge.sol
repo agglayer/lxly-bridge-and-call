@@ -645,12 +645,12 @@ contract MockBridge is DepositContract, EmergencyManager, IPolygonZkEVMBridge {
 
     /**
      * @notice Function to check if an index is claimed or not
-     * @param index Index
      */
-    function isClaimed(uint256 index) external view returns (bool) {
-        (uint256 wordPos, uint256 bitPos) = _bitmapPositions(index);
-        uint256 mask = (1 << bitPos);
-        return (claimedBitMap[wordPos] & mask) == mask;
+    function isClaimed(uint256) external pure returns (bool) {
+        // (uint256 wordPos, uint256 bitPos) = _bitmapPositions(index);
+        // uint256 mask = (1 << bitPos);
+        // return (claimedBitMap[wordPos] & mask) == mask;
+        return true;
     }
 
     /**
