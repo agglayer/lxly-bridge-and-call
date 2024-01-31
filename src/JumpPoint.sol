@@ -1,12 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@zkevm/PolygonZkEVMBridge.sol";
 
 contract JumpPoint {
-    using SafeERC20 for IERC20;
-
     constructor(
         address bridge,
         uint32 originNetwork,
@@ -22,7 +19,7 @@ contract JumpPoint {
             )
         );
         uint256 balance = asset.balanceOf(address(this));
-        asset.safeTransfer(callAddress, balance);
+        asset.approve(callAddress, balance);
 
         // call the target contract with the callData that was received
         (bool success, ) = callAddress.call(callData);
