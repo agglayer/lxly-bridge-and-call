@@ -18,7 +18,7 @@ contract QuickSwap is BaseTest {
         super.setUp();
 
         _l1Usdc = vm.envAddress("ADDRESS_L1_USDC");
-        _l2Matic = vm.envAddress("ADDRESS_L2_MATIC");
+        _l2Matic = vm.envAddress("ADDRESS_L2_BW_MATIC");
 
         // deploy test contracts
         vm.startPrank(_deployer);
@@ -70,10 +70,7 @@ contract QuickSwap is BaseTest {
         assertEq(IERC20(_l2Matic).balanceOf(_bob), 0);
 
         // Claimer claims the asset+message
-        vm.startPrank(_claimer);
-        _mockClaimAsset(_l1Fork, _l2Fork);
-        _mockClaimMessage(_l1Fork, _l2Fork);
-        vm.stopPrank();
+        _mockClaim();
 
         // check that the swap happened and Bob got the MATIC
         vm.selectFork(_l2Fork);

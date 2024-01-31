@@ -156,6 +156,13 @@ abstract contract BaseTest is Test {
         );
     }
 
+    function _mockClaim() internal {
+        vm.startPrank(_claimer);
+        _mockClaimAsset(_l1Fork, _l2Fork);
+        _mockClaimMessage(_l1Fork, _l2Fork);
+        vm.stopPrank();
+    }
+
     function _toDecimals(
         uint256 value,
         uint256 decimals
