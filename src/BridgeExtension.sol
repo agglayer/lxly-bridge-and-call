@@ -24,9 +24,10 @@ contract BridgeExtension is IBridgeMessageReceiver, Ownable {
         address owner_,
         address bridge_,
         uint32 cpNetwork
-    ) Ownable(owner_) {
+    ) Ownable() {
         require(bridge_ != address(0), "INVALID_BRIDGE");
 
+        _transferOwnership(owner_);
         bridge = PolygonZkEVMBridge(bridge_);
         counterpartyNetwork = cpNetwork;
     }
