@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import {Test, console} from "forge-std/Test.sol";
 import {IERC20} from "forge-std/interfaces/IERC20.sol";
 import {BridgeExtension} from "../src/BridgeExtension.sol";
-import {MockBridge} from "../src/mocks/MockBridge.sol";
+import {MockBridgeV2} from "../src/mocks/MockBridgeV2.sol";
 
 abstract contract BaseTest is Test {
     uint256 internal _l1Fork;
@@ -47,12 +47,12 @@ abstract contract BaseTest is Test {
     function _deployMockBridge() private {
         vm.startPrank(_deployer);
         vm.selectFork(_l1Fork);
-        MockBridge mb1 = new MockBridge();
+        MockBridgeV2 mb1 = new MockBridgeV2();
         bytes memory mb1Code = address(mb1).code;
         vm.etch(_bridge, mb1Code);
 
         vm.selectFork(_l2Fork);
-        MockBridge mb2 = new MockBridge();
+        MockBridgeV2 mb2 = new MockBridgeV2();
         bytes memory mb2Code = address(mb2).code;
         vm.etch(_bridge, mb2Code);
         vm.stopPrank();
@@ -92,7 +92,7 @@ abstract contract BaseTest is Test {
     }
 
     function _mockClaimAsset(uint256 from, uint256 to) internal {
-        MockBridge b = MockBridge(_bridge);
+        MockBridgeV2 b = MockBridgeV2(_bridge);
 
         vm.selectFork(from);
         (
@@ -104,14 +104,16 @@ abstract contract BaseTest is Test {
             bytes memory metadata
         ) = b.lastBridgeAssetMsg();
 
-        // proof and index can be empty because our MockBridge bypasses the merkle tree verification
+        // proof and index can be empty because our MockBridgeV2 bypasses the merkle tree verification
         // i.e. _verifyLeaf is always successful
-        bytes32[32] memory proof;
+        bytes32[32] memory smtProofLocalExitRoot;
+        bytes32[32] memory smtProofRollupExitRoot;
         uint32 index;
 
         vm.selectFork(to);
         b.claimAsset(
-            proof,
+            smtProofLocalExitRoot,
+            smtProofRollupExitRoot,
             index,
             "",
             "",
@@ -125,7 +127,7 @@ abstract contract BaseTest is Test {
     }
 
     function _mockClaimMessage(uint256 from, uint256 to) internal {
-        MockBridge b = MockBridge(_bridge);
+        MockBridgeV2 b = MockBridgeV2(_bridge);
 
         vm.selectFork(from);
         (
@@ -137,13 +139,15 @@ abstract contract BaseTest is Test {
             bytes memory metadata
         ) = b.lastBridgeMessageMsg();
 
-        // proof can be empty because our MockBridge bypasses the merkle tree verification
+        // proof can be empty because our MockBridgeV2 bypasses the merkle tree verification
         // i.e. _verifyLeaf is always successful
-        bytes32[32] memory proof;
+        bytes32[32] memory smtProofLocalExitRoot;
+        bytes32[32] memory smtProofRollupExitRoot;
 
         vm.selectFork(to);
         b.claimMessage(
-            proof,
+            smtProofLocalExitRoot,
+            smtProofRollupExitRoot,
             uint32(b.depositCount()),
             "",
             "",

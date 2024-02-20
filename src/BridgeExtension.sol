@@ -5,14 +5,14 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "@zkevm/interfaces/IBridgeMessageReceiver.sol";
-import "@zkevm/PolygonZkEVMBridge.sol";
+import "@zkevm/v2/PolygonZkEVMBridgeV2.sol";
 
 import {JumpPoint} from "./JumpPoint.sol";
 
 contract BridgeExtension is IBridgeMessageReceiver, Ownable {
     using SafeERC20 for IERC20;
 
-    PolygonZkEVMBridge public immutable bridge;
+    PolygonZkEVMBridgeV2 public immutable bridge;
 
     /// @notice The counterparty network, i.e. network that this instance interacts with.
     uint32 public immutable counterpartyNetwork;
@@ -28,7 +28,7 @@ contract BridgeExtension is IBridgeMessageReceiver, Ownable {
         require(bridge_ != address(0), "INVALID_BRIDGE");
 
         _transferOwnership(owner_);
-        bridge = PolygonZkEVMBridge(bridge_);
+        bridge = PolygonZkEVMBridgeV2(bridge_);
         counterpartyNetwork = cpNetwork;
     }
 
@@ -142,7 +142,7 @@ contract BridgeExtension is IBridgeMessageReceiver, Ownable {
             address originAssetAddress,
             bytes memory callData
         ) = abi.decode(data, (uint256, address, address, bytes));
-        require(bridge.isClaimed(dependsOnIndex), "UNCLAIMED_ASSET");
+        require(bridge.isClaimed(uint32(dependsOnIndex), originNetwork), "UNCLAIMED_ASSET");
 
         // the remaining bytes have the selector+args
         new JumpPoint{salt: bytes32(dependsOnIndex)}(
