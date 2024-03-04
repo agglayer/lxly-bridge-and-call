@@ -19,15 +19,15 @@ anvil --fork-url <https://polygonzkevm-mainnet.g.alchemy.com/v2/YOUR_ALCHEMY_KEY
 2. Run the tests
 
 ```bash
-forge test --evm-version shanghai -vvvvv
+forge test -vvvvv
 ```
 
 or
 
 ```
-forge test --evm-version shanghai -vvvvv --match-contract NativeConverter
-forge test --evm-version shanghai -vvvvv --match-contract QuickSwap
-forge test --evm-version shanghai -vvvvv --match-contract KEOM
+forge test -vvvvv --match-contract NativeConverter
+forge test -vvvvv --match-contract QuickSwap
+forge test -vvvvv --match-contract KEOM
 ```
 
 ### Deployment (Mainnet Forks)
