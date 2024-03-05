@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import "../BridgeExtension.sol";
+import "../../../src/IBridgeAndCall.sol";
 
 struct ExactInputSingleParams {
     address tokenIn;
@@ -16,11 +16,11 @@ struct ExactInputSingleParams {
 }
 
 /// @notice Demo contract that triggers `bridgeAndCall` through `buyL2TokenWithL1Token`.
-contract DemoL1SenderDynamicCall {
+contract QuickSwapL1Sender {
     using SafeERC20 for IERC20;
 
     /// @notice The Bridge Extension in L1 (origin network).
-    BridgeExtension public l1BridgeExtension;
+    IBridgeAndCall public l1BridgeExtension;
 
     /// @notice The Bridge Extension address in L2 (destination network).
     address public l2BridgeExtension;
@@ -31,14 +31,9 @@ contract DemoL1SenderDynamicCall {
     /// @notice The address of the contract that will receive the assets, and ultimately get called.
     address public l2Receiver;
 
-    constructor(
-        uint32 l2NetworkId_,
-        address l1BridgeExtension_,
-        address l2BridgeExtension_,
-        address l2Receiver_
-    ) {
+    constructor(uint32 l2NetworkId_, address l1BridgeExtension_, address l2BridgeExtension_, address l2Receiver_) {
         l2NetworkId = l2NetworkId_;
-        l1BridgeExtension = BridgeExtension(l1BridgeExtension_);
+        l1BridgeExtension = IBridgeAndCall(l1BridgeExtension_);
         l2BridgeExtension = l2BridgeExtension_;
         l2Receiver = l2Receiver_;
     }
@@ -51,11 +46,7 @@ contract DemoL1SenderDynamicCall {
         address receiver
     ) external {
         // transfer the assets from the caller to this contract (the extension will take it from here)
-        IERC20(l1Token).safeTransferFrom(
-            msg.sender,
-            address(this),
-            amountToSpend
-        );
+        IERC20(l1Token).safeTransferFrom(msg.sender, address(this), amountToSpend);
         // allow the extension to take the assets
         IERC20(l1Token).approve(address(l1BridgeExtension), amountToSpend);
 
@@ -68,11 +59,7 @@ contract DemoL1SenderDynamicCall {
             bytes4(keccak256("approveAndQuickSwap(address,bytes)")),
             0xF6Ad3CcF71Abb3E12beCf6b3D2a74C963859ADCd, // QuickSwap SwapRouter
             abi.encodeWithSelector( // function selector
-                bytes4(
-                    keccak256(
-                        "exactInputSingle((address,address,address,uint256,uint256,uint256,uint160))"
-                    )
-                ),
+                bytes4(keccak256("exactInputSingle((address,address,address,uint256,uint256,uint256,uint160))")),
                 ExactInputSingleParams(
                     0xA8CE8aee21bC2A48a5EF670afCc9274C7bbbC035, // bridge wrapped usdc
                     l2Token,

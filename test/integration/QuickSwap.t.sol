@@ -2,17 +2,17 @@
 pragma solidity ^0.8.20;
 
 import {IERC20} from "forge-std/interfaces/IERC20.sol";
-import {DemoL1SenderDynamicCall} from "../src/demo/DemoL1Sender.sol";
-import {DemoL2Receiver} from "../src/demo/DemoL2Receiver.sol";
 
+import {QuickSwapL1Sender} from "./demo/QuickSwapL1Sender.sol";
+import {QuickSwapL2Receiver} from "./demo/QuickSwapL2Receiver.sol";
 import {BaseTest} from "./BaseTest.sol";
 
 contract QuickSwap is BaseTest {
     address internal _l1Usdc;
     address internal _l2Matic;
 
-    DemoL1SenderDynamicCall internal _l1SenderContract;
-    DemoL2Receiver internal _l2ReceiverContract;
+    QuickSwapL1Sender internal _l1SenderContract;
+    QuickSwapL2Receiver internal _l2ReceiverContract;
 
     function setUp() public override {
         super.setUp();
@@ -23,14 +23,11 @@ contract QuickSwap is BaseTest {
         // deploy test contracts
         vm.startPrank(_deployer);
         vm.selectFork(_l2Fork);
-        _l2ReceiverContract = new DemoL2Receiver();
+        _l2ReceiverContract = new QuickSwapL2Receiver();
 
         vm.selectFork(_l1Fork);
-        _l1SenderContract = new DemoL1SenderDynamicCall(
-            _l2NetworkId,
-            address(_l1BridgeExtension),
-            address(_l2BridgeExtension),
-            address(_l2ReceiverContract)
+        _l1SenderContract = new QuickSwapL1Sender(
+            _l2NetworkId, address(_l1BridgeExtension), address(_l2BridgeExtension), address(_l2ReceiverContract)
         );
         vm.stopPrank();
 
@@ -74,6 +71,6 @@ contract QuickSwap is BaseTest {
 
         // check that the swap happened and Bob got the MATIC
         vm.selectFork(_l2Fork);
-        assertGt(IERC20(_l2Matic).balanceOf(_bob), _toDecimals(1000, 18)); // can be assured cause 1USDC > 1MATIC
+        assertGt(IERC20(_l2Matic).balanceOf(_bob), _toDecimals(880, 18)); // ATTN: swap rate of 1 USDC == 0.88 MATIC
     }
 }

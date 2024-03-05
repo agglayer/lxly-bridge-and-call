@@ -3,8 +3,9 @@ pragma solidity ^0.8.20;
 
 import {Test, console} from "forge-std/Test.sol";
 import {IERC20} from "forge-std/interfaces/IERC20.sol";
-import {BridgeExtension} from "../src/BridgeExtension.sol";
-import {MockBridgeV2} from "../src/mocks/MockBridgeV2.sol";
+import {BridgeExtension} from "../../src/BridgeExtension.sol";
+import {BridgeExtensionProxy} from "../../src/BridgeExtensionProxy.sol";
+import {MockBridgeV2} from "./mocks/MockBridgeV2.sol";
 
 abstract contract BaseTest is Test {
     uint256 internal _l1Fork;
@@ -60,33 +61,21 @@ abstract contract BaseTest is Test {
 
     function _deployContracts() private {
         vm.startPrank(_deployer);
+        uint256 salt = 1234567890;
 
         // deploy L1 Bridge Extension
         vm.selectFork(_l1Fork);
-        _l1BridgeExtension = new BridgeExtension(
-            _deployer,
-            _bridge,
-            _l2NetworkId
+        BridgeExtensionProxy bep1 = new BridgeExtensionProxy{salt: bytes32(salt)}(
+            _deployer, address(new BridgeExtension{salt: bytes32(salt)}()), _deployer, _bridge
         );
+        _l1BridgeExtension = BridgeExtension(address(bep1));
 
         // deploy L2 Bridge Extension
         vm.selectFork(_l2Fork);
-        _l2BridgeExtension = new BridgeExtension(
-            _deployer,
-            _bridge,
-            _l1NetworkId
+        BridgeExtensionProxy bep2 = new BridgeExtensionProxy{salt: bytes32(salt)}(
+            _deployer, address(new BridgeExtension{salt: bytes32(salt)}()), _deployer, _bridge
         );
-
-        // set L2's counterparty
-        _l2BridgeExtension.setCounterpartyExtension(
-            address(_l1BridgeExtension)
-        );
-
-        // set L1's counterparty
-        vm.selectFork(_l1Fork);
-        _l1BridgeExtension.setCounterpartyExtension(
-            address(_l2BridgeExtension)
-        );
+        _l2BridgeExtension = BridgeExtension(address(bep2));
 
         vm.stopPrank();
     }
@@ -167,10 +156,7 @@ abstract contract BaseTest is Test {
         vm.stopPrank();
     }
 
-    function _toDecimals(
-        uint256 value,
-        uint256 decimals
-    ) internal pure returns (uint256) {
+    function _toDecimals(uint256 value, uint256 decimals) internal pure returns (uint256) {
         return value * 10 ** decimals;
     }
 }

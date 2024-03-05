@@ -7,34 +7,21 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@zkevm/interfaces/IBridgeMessageReceiver.sol";
 import "@zkevm/v2/PolygonZkEVMBridgeV2.sol";
 
+import {IBridgeAndCall} from "./IBridgeAndCall.sol";
 import {JumpPoint} from "./JumpPoint.sol";
 
-contract BridgeExtension is IBridgeMessageReceiver, Ownable {
+contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializable, Ownable {
     using SafeERC20 for IERC20;
 
-    PolygonZkEVMBridgeV2 public immutable bridge;
+    PolygonZkEVMBridgeV2 public bridge;
 
-    /// @notice The counterparty network, i.e. network that this instance interacts with.
-    uint32 public immutable counterpartyNetwork;
+    constructor() Ownable() {}
 
-    /// @notice Address of the BridgeExtension in the counterparty network.
-    address public counterpartyExtension;
-
-    constructor(
-        address owner_,
-        address bridge_,
-        uint32 cpNetwork
-    ) Ownable() {
+    function initialize(address owner_, address bridge_) external initializer {
         require(bridge_ != address(0), "INVALID_BRIDGE");
 
         _transferOwnership(owner_);
         bridge = PolygonZkEVMBridgeV2(bridge_);
-        counterpartyNetwork = cpNetwork;
-    }
-
-    /// @notice Setter for `counterpartyExtension`.
-    function setCounterpartyExtension(address cpExtension) external onlyOwner {
-        counterpartyExtension = cpExtension;
     }
 
     /// @notice Bridge and call from this function.
@@ -57,39 +44,16 @@ contract BridgeExtension is IBridgeMessageReceiver, Ownable {
         IERC20(token).approve(address(bridge), amount);
 
         // pre-compute the address of the JumpPoint contract so we can bridge the assets
-        address jumpPointAddr = _computeJumpPointAddress(
-            counterpartyExtension,
-            dependsOnIndex,
-            token,
-            callAddress,
-            callData
-        );
+        address jumpPointAddr = _computeJumpPointAddress(address(this), dependsOnIndex, token, callAddress, callData);
         // bridge the assets
-        bridge.bridgeAsset(
-            destinationNetwork,
-            jumpPointAddr,
-            amount,
-            token,
-            forceUpdateGlobalExitRoot,
-            permitData
-        );
+        bridge.bridgeAsset(destinationNetwork, jumpPointAddr, amount, token, false, permitData);
 
         // assert that the index is correct - avoid any potential reentrancy caused by bridgeAsset
         require(dependsOnIndex == bridge.depositCount(), "INVALID_INDEX");
 
-        // bridge the message (which gets encoded with extra data)
-        bytes memory encodedMsg = abi.encode(
-            dependsOnIndex,
-            callAddress,
-            token,
-            callData
-        );
-        bridge.bridgeMessage(
-            destinationNetwork,
-            counterpartyExtension,
-            forceUpdateGlobalExitRoot,
-            encodedMsg
-        );
+        // bridge the message (which gets encoded with extra data) to the extension on the destination network
+        bytes memory encodedMsg = abi.encode(dependsOnIndex, callAddress, token, callData);
+        bridge.bridgeMessage(destinationNetwork, address(this), forceUpdateGlobalExitRoot, encodedMsg);
     }
 
     /// @dev Helper function to pre-compute the jumppoint address (the contract pseudo-deployed using create2).
@@ -121,36 +85,23 @@ contract BridgeExtension is IBridgeMessageReceiver, Ownable {
             )
         );
         // cast last 20 bytes of hash to address
-        return address(uint160(uint(hash)));
+        return address(uint160(uint256(hash)));
     }
 
     /// @notice `IBridgeMessageReceiver`'s callback. This is only executed if `bridgeAndCall`'s
     /// `destinationAddressMessage` is the BridgeExtension (in the destination network).
-    function onMessageReceived(
-        address originAddress,
-        uint32 originNetwork,
-        bytes calldata data
-    ) external payable {
+    function onMessageReceived(address originAddress, uint32 originNetwork, bytes calldata data) external payable {
         require(msg.sender == address(bridge), "NOT_BRIDGE");
-        require(originNetwork == counterpartyNetwork, "INVALID_NETWORK");
-        require(originAddress == counterpartyExtension, "INVALID_ADDRESS");
+        require(originAddress == address(this), "INVALID_ADDRESS"); // BridgeExtension must have the same address in all networks
 
         // decode the index for bridgeAsset, and check that it has been claimed
-        (
-            uint256 dependsOnIndex,
-            address callAddress,
-            address originAssetAddress,
-            bytes memory callData
-        ) = abi.decode(data, (uint256, address, address, bytes));
+        (uint256 dependsOnIndex, address callAddress, address originAssetAddress, bytes memory callData) =
+            abi.decode(data, (uint256, address, address, bytes));
         require(bridge.isClaimed(uint32(dependsOnIndex), originNetwork), "UNCLAIMED_ASSET");
 
         // the remaining bytes have the selector+args
         new JumpPoint{salt: bytes32(dependsOnIndex)}(
-            address(bridge),
-            originNetwork,
-            originAssetAddress,
-            callAddress,
-            callData
+            address(bridge), originNetwork, originAssetAddress, callAddress, callData
         );
     }
 }

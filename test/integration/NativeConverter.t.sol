@@ -38,16 +38,14 @@ contract NativeConverter is BaseTest {
     function testBridgeAndConvertUSDC() public {
         vm.selectFork(_l1Fork);
         vm.startPrank(_alice);
+
         uint256 amount = _toDecimals(1000, 6);
-        IERC20(_l1Usdc).approve(address(_l1BridgeExtension), amount);
+        assertGe(IERC20(_l1Usdc).balanceOf(_alice), amount);
 
         // bridge L1 USDC to L2 and call NativeConvert.convert
-        bytes memory callData = abi.encodeWithSelector(
-            bytes4(keccak256("convert(address,uint256,bytes)")),
-            _alice,
-            amount,
-            ""
-        );
+        IERC20(_l1Usdc).approve(address(_l1BridgeExtension), amount);
+        bytes memory callData =
+            abi.encodeWithSelector(bytes4(keccak256("convert(address,uint256,bytes)")), _alice, amount, "");
         _l1BridgeExtension.bridgeAndCall(
             _l1Usdc,
             amount,

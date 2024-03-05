@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import {IERC20} from "forge-std/interfaces/IERC20.sol";
 
-import {KEOMDepositor} from "../src/demo/KEOMDepositor.sol";
+import {KEOMDepositor} from "./demo/KEOMDepositor.sol";
 import {BaseTest} from "./BaseTest.sol";
 
 contract KEOM is BaseTest {
@@ -39,23 +39,13 @@ contract KEOM is BaseTest {
         IERC20(_l1Matic).approve(address(_l1BridgeExtension), amount);
 
         bytes memory callData = abi.encodeWithSelector(
-            bytes4(
-                keccak256("mintAndTransfer(address,address,uint256,address)")
-            ),
+            bytes4(keccak256("mintAndTransfer(address,address,uint256,address)")),
             _l2BWMatic, // l2 token (MATIC)
             _l2kMatic, // cToken
             amount, // amount
             _alice // receiver
         );
-        _l1BridgeExtension.bridgeAndCall(
-            _l1Matic,
-            amount,
-            "",
-            _l2NetworkId,
-            _keomDepositor,
-            callData,
-            true
-        );
+        _l1BridgeExtension.bridgeAndCall(_l1Matic, amount, "", _l2NetworkId, _keomDepositor, callData, true);
         vm.stopPrank();
 
         vm.selectFork(_l2Fork);

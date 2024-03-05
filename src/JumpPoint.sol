@@ -22,8 +22,12 @@ contract JumpPoint {
         asset.approve(callAddress, balance);
 
         // call the target contract with the callData that was received
-        (bool success, ) = callAddress.call(callData);
+        (bool success,) = callAddress.call(callData);
         // TODO: implement fallback - if (!success) transferToFallback();
         require(success);
+
+        assembly {
+            return(0, 0)
+        }
     }
 }
