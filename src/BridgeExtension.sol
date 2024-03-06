@@ -31,6 +31,7 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializabl
         bytes calldata permitData,
         uint32 destinationNetwork,
         address callAddress,
+        address fallbackAddress,
         bytes calldata callData,
         bool forceUpdateGlobalExitRoot
     ) external payable {
@@ -40,28 +41,44 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializabl
         // calculate the depends on index based on the number of bridgeAssets we're doing
         uint256 dependsOnIndex = bridge.depositCount() + 1;
 
-        // allow the bridge to take the assets
-        IERC20(token).approve(address(bridge), amount);
-
-        // pre-compute the address of the JumpPoint contract so we can bridge the assets
-        address jumpPointAddr = _computeJumpPointAddress(address(this), dependsOnIndex, token, callAddress, callData);
-        // bridge the assets
-        bridge.bridgeAsset(destinationNetwork, jumpPointAddr, amount, token, false, permitData);
+        // using a helper to get rid of stack too deep
+        _bridgeAssetHelper(
+            token, amount, permitData, destinationNetwork, callAddress, fallbackAddress, callData, dependsOnIndex
+        );
 
         // assert that the index is correct - avoid any potential reentrancy caused by bridgeAsset
         require(dependsOnIndex == bridge.depositCount(), "INVALID_INDEX");
 
         // bridge the message (which gets encoded with extra data) to the extension on the destination network
-        bytes memory encodedMsg = abi.encode(dependsOnIndex, callAddress, token, callData);
+        bytes memory encodedMsg = abi.encode(dependsOnIndex, callAddress, fallbackAddress, token, callData);
         bridge.bridgeMessage(destinationNetwork, address(this), forceUpdateGlobalExitRoot, encodedMsg);
+    }
+
+    function _bridgeAssetHelper(
+        address token,
+        uint256 amount,
+        bytes calldata permitData,
+        uint32 destinationNetwork,
+        address callAddress,
+        address fallbackAddress,
+        bytes calldata callData,
+        uint256 dependsOnIndex
+    ) internal {
+        // allow the bridge to take the assets
+        IERC20(token).approve(address(bridge), amount);
+
+        // pre-compute the address of the JumpPoint contract so we can bridge the assets
+        address jumpPointAddr = _computeJumpPointAddress(dependsOnIndex, token, callAddress, fallbackAddress, callData);
+        // bridge the assets
+        bridge.bridgeAsset(destinationNetwork, jumpPointAddr, amount, token, false, permitData);
     }
 
     /// @dev Helper function to pre-compute the jumppoint address (the contract pseudo-deployed using create2).
     function _computeJumpPointAddress(
-        address deployer,
         uint256 dependsOnIndex,
         address originAssetAddress,
         address callAddress,
+        address fallbackAddress,
         bytes memory callData
     ) internal view returns (address) {
         bytes memory bytecode = abi.encodePacked(
@@ -71,6 +88,7 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializabl
                 bridge.networkID(), // current network
                 originAssetAddress,
                 callAddress,
+                fallbackAddress,
                 callData
             )
         );
@@ -79,7 +97,7 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializabl
         bytes32 hash = keccak256(
             abi.encodePacked(
                 bytes1(0xff),
-                deployer, // deployer = counterparty bridge extension OR "this"
+                address(this), // deployer = counterparty bridge extension AKA "this"
                 bytes32(dependsOnIndex), // salt = the depends on index
                 keccak256(bytecode)
             )
@@ -95,13 +113,18 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializabl
         require(originAddress == address(this), "INVALID_ADDRESS"); // BridgeExtension must have the same address in all networks
 
         // decode the index for bridgeAsset, and check that it has been claimed
-        (uint256 dependsOnIndex, address callAddress, address originAssetAddress, bytes memory callData) =
-            abi.decode(data, (uint256, address, address, bytes));
+        (
+            uint256 dependsOnIndex,
+            address callAddress,
+            address fallbackAddress,
+            address originAssetAddress,
+            bytes memory callData
+        ) = abi.decode(data, (uint256, address, address, address, bytes));
         require(bridge.isClaimed(uint32(dependsOnIndex), originNetwork), "UNCLAIMED_ASSET");
 
         // the remaining bytes have the selector+args
         new JumpPoint{salt: bytes32(dependsOnIndex)}(
-            address(bridge), originNetwork, originAssetAddress, callAddress, callData
+            address(bridge), originNetwork, originAssetAddress, callAddress, fallbackAddress, callData
         );
     }
 }

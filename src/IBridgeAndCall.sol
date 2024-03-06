@@ -8,6 +8,7 @@ interface IBridgeAndCall {
         bytes calldata permitData,
         uint32 destinationNetwork,
         address callAddress,
+        address fallbackAddress,
         bytes calldata callData,
         bool forceUpdateGlobalExitRoot
     ) external payable;

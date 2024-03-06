@@ -45,7 +45,16 @@ contract KEOM is BaseTest {
             amount, // amount
             _alice // receiver
         );
-        _l1BridgeExtension.bridgeAndCall(_l1Matic, amount, "", _l2NetworkId, _keomDepositor, callData, true);
+        _l1BridgeExtension.bridgeAndCall(
+            _l1Matic,
+            amount,
+            "",
+            _l2NetworkId,
+            _keomDepositor,
+            address(0), // fallback address
+            callData,
+            true
+        );
         vm.stopPrank();
 
         vm.selectFork(_l2Fork);

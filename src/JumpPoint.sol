@@ -9,11 +9,14 @@ contract JumpPoint {
         uint32 originNetwork,
         address originAssetAddress,
         address callAddress,
+        address fallbackAddress,
         bytes memory callData
     ) payable {
+        // TODO: support native asset
+
         // transfer the asset to the target contract
-        // NOTE: we need to find the address in the current network
         IERC20 asset = IERC20(
+            // NOTE: this weird logic is how we find the address in the current network
             PolygonZkEVMBridge(bridge).tokenInfoToWrappedToken(
                 keccak256(abi.encodePacked(originNetwork, originAssetAddress))
             )
@@ -23,8 +26,9 @@ contract JumpPoint {
 
         // call the target contract with the callData that was received
         (bool success,) = callAddress.call(callData);
-        // TODO: implement fallback - if (!success) transferToFallback();
-        require(success);
+        if (!success) {
+            asset.transfer(fallbackAddress, balance);
+        }
 
         assembly {
             return(0, 0)
