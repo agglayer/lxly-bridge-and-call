@@ -39,7 +39,7 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializabl
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
 
         // calculate the depends on index based on the number of bridgeAssets we're doing
-        uint256 dependsOnIndex = bridge.depositCount() + 1;
+        uint256 dependsOnIndex = bridge.depositCount() + 1; // only doing 1 bridge asset
 
         // using a helper to get rid of stack too deep
         _bridgeAssetHelper(
@@ -69,11 +69,13 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializabl
 
         // pre-compute the address of the JumpPoint contract so we can bridge the assets
         address jumpPointAddr = _computeJumpPointAddress(dependsOnIndex, token, callAddress, fallbackAddress, callData);
+
         // bridge the assets
         bridge.bridgeAsset(destinationNetwork, jumpPointAddr, amount, token, false, permitData);
     }
 
     /// @dev Helper function to pre-compute the jumppoint address (the contract pseudo-deployed using create2).
+    /// NOTE: inlining into `_bridgeAssetHelper` triggers a `Stack too deep`.
     function _computeJumpPointAddress(
         uint256 dependsOnIndex,
         address originAssetAddress,
@@ -81,6 +83,8 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializabl
         address fallbackAddress,
         bytes memory callData
     ) internal view returns (address) {
+        // JumpPoint is deployed using CREATE2, so we are able to pre-compute the address
+        // of the JumpPoint instance in advance, in order to bridge the assets to it
         bytes memory bytecode = abi.encodePacked(
             type(JumpPoint).creationCode,
             abi.encode(
@@ -93,7 +97,7 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializabl
             )
         );
 
-        // precompute address that will be the receiver of the assets
+        // this just follows the CREATE2 address computation algo
         bytes32 hash = keccak256(
             abi.encodePacked(
                 bytes1(0xff),
