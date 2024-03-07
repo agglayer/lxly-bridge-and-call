@@ -1,4 +1,6 @@
-# LXLY BRIDGE AND CALL
+# uLXLY BRIDGE AND CALL
+
+NOTE: Work in Progress. Unaudited.
 
 ## Testing and Deploying
 
