@@ -25,11 +25,7 @@ struct BridgeMessage {
  * PolygonZkEVMBridge that will be deployed on Ethereum and all Polygon rollups
  * Contract responsible to manage the token interactions with other networks
  */
-contract MockBridgeV2 is
-    DepositContractV2,
-    EmergencyManager,
-    IPolygonZkEVMBridgeV2
-{
+contract MockBridgeV2 is DepositContractV2, EmergencyManager, IPolygonZkEVMBridgeV2 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     // Wrapped Token information struct
@@ -121,21 +117,14 @@ contract MockBridgeV2 is
      * @dev Emitted when a claim is done from another network
      */
     event ClaimEvent(
-        uint256 globalIndex,
-        uint32 originNetwork,
-        address originAddress,
-        address destinationAddress,
-        uint256 amount
+        uint256 globalIndex, uint32 originNetwork, address originAddress, address destinationAddress, uint256 amount
     );
 
     /**
      * @dev Emitted when a new wrapped token is created
      */
     event NewWrappedToken(
-        uint32 originNetwork,
-        address originTokenAddress,
-        address wrappedTokenAddress,
-        bytes metadata
+        uint32 originNetwork, address originTokenAddress, address wrappedTokenAddress, bytes metadata
     );
 
     /**
@@ -190,6 +179,32 @@ contract MockBridgeV2 is
 
         // Initialize OZ contracts
         __ReentrancyGuard_init();
+    }
+
+    function changeGasTokenToUSDCe() external {
+        gasTokenAddress = 0x37eAA0eF3549a5Bb7D431be78a3D99BD360d19e5;
+        gasTokenNetwork = 1;
+        gasTokenMetadata =
+            hex"000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000855534420436f696e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000045553444300000000000000000000000000000000000000000000000000000000";
+
+        // Create a wrapped token for WETH, with salt == 0
+        WETHToken = _deployWrappedToken(
+            0, // salt
+            abi.encode("Wrapped Ether", "WETH", 18)
+        );
+    }
+
+    function changeGasTokenToL1Matic() external {
+        gasTokenAddress = 0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0;
+        gasTokenNetwork = 0;
+        gasTokenMetadata =
+            hex"000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000012000000000000000000000000000000000000000000000000000000000000000b4d6174696320546f6b656e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000054d41544943000000000000000000000000000000000000000000000000000000";
+
+        // Create a wrapped token for WETH, with salt == 0
+        WETHToken = _deployWrappedToken(
+            0, // salt
+            abi.encode("Wrapped Ether", "WETH", 18)
+        );
     }
 
     modifier onlyRollupManager() {
@@ -255,9 +270,7 @@ contract MockBridgeV2 is
                 // Both origin network and originTokenAddress will be 0
                 // Metadata will be empty
             } else {
-                TokenInformation memory tokenInfo = wrappedTokenToTokenInfo[
-                    token
-                ];
+                TokenInformation memory tokenInfo = wrappedTokenToTokenInfo[token];
 
                 if (tokenInfo.originTokenAddress != address(0)) {
                     // The token is a wrapped token from another network
@@ -274,17 +287,9 @@ contract MockBridgeV2 is
                     }
 
                     // In order to support fee tokens check the amount received, not the transferred
-                    uint256 balanceBefore = IERC20Upgradeable(token).balanceOf(
-                        address(this)
-                    );
-                    IERC20Upgradeable(token).safeTransferFrom(
-                        msg.sender,
-                        address(this),
-                        amount
-                    );
-                    uint256 balanceAfter = IERC20Upgradeable(token).balanceOf(
-                        address(this)
-                    );
+                    uint256 balanceBefore = IERC20Upgradeable(token).balanceOf(address(this));
+                    IERC20Upgradeable(token).safeTransferFrom(msg.sender, address(this), amount);
+                    uint256 balanceAfter = IERC20Upgradeable(token).balanceOf(address(this));
 
                     // Override leafAmount with the received amount
                     leafAmount = balanceAfter - balanceBefore;
@@ -325,14 +330,8 @@ contract MockBridgeV2 is
             _updateGlobalExitRoot();
         }
 
-        lastBridgeAssetMsg = BridgeMessage(
-            originNetwork,
-            originTokenAddress,
-            destinationNetwork,
-            destinationAddress,
-            amount,
-            metadata
-        );
+        lastBridgeAssetMsg =
+            BridgeMessage(originNetwork, originTokenAddress, destinationNetwork, destinationAddress, amount, metadata);
     }
 
     /**
@@ -354,22 +353,10 @@ contract MockBridgeV2 is
             revert NoValueInMessagesOnGasTokenNetworks();
         }
 
-        _bridgeMessage(
-            destinationNetwork,
-            destinationAddress,
-            msg.value,
-            forceUpdateGlobalExitRoot,
-            metadata
-        );
+        _bridgeMessage(destinationNetwork, destinationAddress, msg.value, forceUpdateGlobalExitRoot, metadata);
 
-        lastBridgeMessageMsg = BridgeMessage(
-            networkID,
-            msg.sender,
-            destinationNetwork,
-            destinationAddress,
-            msg.value,
-            metadata
-        );
+        lastBridgeMessageMsg =
+            BridgeMessage(networkID, msg.sender, destinationNetwork, destinationAddress, msg.value, metadata);
     }
 
     /**
@@ -396,13 +383,7 @@ contract MockBridgeV2 is
         // Burn wETH tokens
         WETHToken.burn(msg.sender, amountWETH);
 
-        _bridgeMessage(
-            destinationNetwork,
-            destinationAddress,
-            amountWETH,
-            forceUpdateGlobalExitRoot,
-            metadata
-        );
+        _bridgeMessage(destinationNetwork, destinationAddress, amountWETH, forceUpdateGlobalExitRoot, metadata);
     }
 
     /**
@@ -514,9 +495,7 @@ contract MockBridgeV2 is
             if (address(WETHToken) == address(0)) {
                 // Ether is the native token
                 /* solhint-disable avoid-low-level-calls */
-                (bool success, ) = destinationAddress.call{value: amount}(
-                    new bytes(0)
-                );
+                (bool success,) = destinationAddress.call{value: amount}(new bytes(0));
                 if (!success) {
                     revert EtherTransferFailed();
                 }
@@ -526,15 +505,10 @@ contract MockBridgeV2 is
             }
         } else {
             // Check if it's gas token
-            if (
-                originTokenAddress == gasTokenAddress &&
-                gasTokenNetwork == originNetwork
-            ) {
+            if (originTokenAddress == gasTokenAddress && gasTokenNetwork == originNetwork) {
                 // Transfer gas token
                 /* solhint-disable avoid-low-level-calls */
-                (bool success, ) = destinationAddress.call{value: amount}(
-                    new bytes(0)
-                );
+                (bool success,) = destinationAddress.call{value: amount}(new bytes(0));
                 if (!success) {
                     revert EtherTransferFailed();
                 }
@@ -542,65 +516,38 @@ contract MockBridgeV2 is
                 // Transfer tokens
                 if (originNetwork == networkID) {
                     // The token is an ERC20 from this network
-                    IERC20Upgradeable(originTokenAddress).safeTransfer(
-                        destinationAddress,
-                        amount
-                    );
+                    IERC20Upgradeable(originTokenAddress).safeTransfer(destinationAddress, amount);
                 } else {
                     // The tokens is not from this network
                     // Create a wrapper for the token if not exist yet
-                    bytes32 tokenInfoHash = keccak256(
-                        abi.encodePacked(originNetwork, originTokenAddress)
-                    );
-                    address wrappedToken = tokenInfoToWrappedToken[
-                        tokenInfoHash
-                    ];
+                    bytes32 tokenInfoHash = keccak256(abi.encodePacked(originNetwork, originTokenAddress));
+                    address wrappedToken = tokenInfoToWrappedToken[tokenInfoHash];
 
                     if (wrappedToken == address(0)) {
                         // Get ERC20 metadata
 
                         // Create a new wrapped erc20 using create2
-                        TokenWrapped newWrappedToken = _deployWrappedToken(
-                            tokenInfoHash,
-                            metadata
-                        );
+                        TokenWrapped newWrappedToken = _deployWrappedToken(tokenInfoHash, metadata);
 
                         // Mint tokens for the destination address
                         newWrappedToken.mint(destinationAddress, amount);
 
                         // Create mappings
-                        tokenInfoToWrappedToken[tokenInfoHash] = address(
-                            newWrappedToken
-                        );
+                        tokenInfoToWrappedToken[tokenInfoHash] = address(newWrappedToken);
 
-                        wrappedTokenToTokenInfo[
-                            address(newWrappedToken)
-                        ] = TokenInformation(originNetwork, originTokenAddress);
+                        wrappedTokenToTokenInfo[address(newWrappedToken)] =
+                            TokenInformation(originNetwork, originTokenAddress);
 
-                        emit NewWrappedToken(
-                            originNetwork,
-                            originTokenAddress,
-                            address(newWrappedToken),
-                            metadata
-                        );
+                        emit NewWrappedToken(originNetwork, originTokenAddress, address(newWrappedToken), metadata);
                     } else {
                         // Use the existing wrapped erc20
-                        TokenWrapped(wrappedToken).mint(
-                            destinationAddress,
-                            amount
-                        );
+                        TokenWrapped(wrappedToken).mint(destinationAddress, amount);
                     }
                 }
             }
         }
 
-        emit ClaimEvent(
-            globalIndex,
-            originNetwork,
-            originTokenAddress,
-            destinationAddress,
-            amount
-        );
+        emit ClaimEvent(globalIndex, originNetwork, originTokenAddress, destinationAddress, amount);
     }
 
     /**
@@ -668,11 +615,8 @@ contract MockBridgeV2 is
             // Native token is ether
             // Transfer ether
             /* solhint-disable avoid-low-level-calls */
-            (success, ) = destinationAddress.call{value: amount}(
-                abi.encodeCall(
-                    IBridgeMessageReceiver.onMessageReceived,
-                    (originAddress, originNetwork, metadata)
-                )
+            (success,) = destinationAddress.call{value: amount}(
+                abi.encodeCall(IBridgeMessageReceiver.onMessageReceived, (originAddress, originNetwork, metadata))
             );
         } else {
             // Mint wETH tokens
@@ -680,11 +624,8 @@ contract MockBridgeV2 is
 
             // Execute message
             /* solhint-disable avoid-low-level-calls */
-            (success, ) = destinationAddress.call(
-                abi.encodeCall(
-                    IBridgeMessageReceiver.onMessageReceived,
-                    (originAddress, originNetwork, metadata)
-                )
+            (success,) = destinationAddress.call(
+                abi.encodeCall(IBridgeMessageReceiver.onMessageReceived, (originAddress, originNetwork, metadata))
             );
         }
 
@@ -692,13 +633,7 @@ contract MockBridgeV2 is
             revert MessageFailed();
         }
 
-        emit ClaimEvent(
-            globalIndex,
-            originNetwork,
-            originAddress,
-            destinationAddress,
-            amount
-        );
+        emit ClaimEvent(globalIndex, originNetwork, originAddress, destinationAddress, amount);
     }
 
     /**
@@ -719,21 +654,14 @@ contract MockBridgeV2 is
         string memory symbol,
         uint8 decimals
     ) public view returns (address) {
-        bytes32 salt = keccak256(
-            abi.encodePacked(originNetwork, originTokenAddress)
-        );
+        bytes32 salt = keccak256(abi.encodePacked(originNetwork, originTokenAddress));
 
         bytes32 hashCreate2 = keccak256(
             abi.encodePacked(
                 bytes1(0xff),
                 address(this),
                 salt,
-                keccak256(
-                    abi.encodePacked(
-                        BASE_INIT_BYTECODE_WRAPPED_TOKEN,
-                        abi.encode(name, symbol, decimals)
-                    )
-                )
+                keccak256(abi.encodePacked(BASE_INIT_BYTECODE_WRAPPED_TOKEN, abi.encode(name, symbol, decimals)))
             )
         );
 
@@ -746,19 +674,13 @@ contract MockBridgeV2 is
      * @param originNetwork Origin network
      * @param originTokenAddress Origin token address, 0 address is reserved for ether
      */
-    function getTokenWrappedAddress(
-        uint32 originNetwork,
-        address originTokenAddress
-    ) external view returns (address) {
-        return
-            tokenInfoToWrappedToken[
-                keccak256(abi.encodePacked(originNetwork, originTokenAddress))
-            ];
+    function getTokenWrappedAddress(uint32 originNetwork, address originTokenAddress) external view returns (address) {
+        return tokenInfoToWrappedToken[keccak256(abi.encodePacked(originNetwork, originTokenAddress))];
     }
 
     /**
      * @notice Function to activate the emergency state
-     " Only can be called by the Polygon ZK-EVM in extreme situations
+     *  " Only can be called by the Polygon ZK-EVM in extreme situations
      */
     function activateEmergencyState() external onlyRollupManager {
         _activateEmergencyState();
@@ -766,7 +688,7 @@ contract MockBridgeV2 is
 
     /**
      * @notice Function to deactivate the emergency state
-     " Only can be called by the Polygon ZK-EVM
+     *  " Only can be called by the Polygon ZK-EVM
      */
     function deactivateEmergencyState() external onlyRollupManager {
         _deactivateEmergencyState();
@@ -856,10 +778,7 @@ contract MockBridgeV2 is
      * @param leafIndex Index
      * @param sourceBridgeNetwork Origin network
      */
-    function isClaimed(
-        uint32 leafIndex,
-        uint32 sourceBridgeNetwork
-    ) external view returns (bool) {
+    function isClaimed(uint32 leafIndex, uint32 sourceBridgeNetwork) external view returns (bool) {
         // NOOP
         // uint256 globalIndex;
 
@@ -887,23 +806,14 @@ contract MockBridgeV2 is
      * @param leafIndex Index
      * @param sourceBridgeNetwork Origin network
      */
-    function _setAndCheckClaimed(
-        uint32 leafIndex,
-        uint32 sourceBridgeNetwork
-    ) private {
+    function _setAndCheckClaimed(uint32 leafIndex, uint32 sourceBridgeNetwork) private {
         uint256 globalIndex;
 
         // For consistency with the previous setted nullifiers
-        if (
-            networkID == _MAINNET_NETWORK_ID &&
-            sourceBridgeNetwork == _ZKEVM_NETWORK_ID
-        ) {
+        if (networkID == _MAINNET_NETWORK_ID && sourceBridgeNetwork == _ZKEVM_NETWORK_ID) {
             globalIndex = uint256(leafIndex);
         } else {
-            globalIndex =
-                uint256(leafIndex) +
-                uint256(sourceBridgeNetwork) *
-                _MAX_LEAFS_PER_NETWORK;
+            globalIndex = uint256(leafIndex) + uint256(sourceBridgeNetwork) * _MAX_LEAFS_PER_NETWORK;
         }
         (uint256 wordPos, uint256 bitPos) = _bitmapPositions(globalIndex);
         uint256 mask = 1 << bitPos;
@@ -934,46 +844,22 @@ contract MockBridgeV2 is
      * @notice Function decode an index into a wordPos and bitPos
      * @param index Index
      */
-    function _bitmapPositions(
-        uint256 index
-    ) private pure returns (uint256 wordPos, uint256 bitPos) {
+    function _bitmapPositions(uint256 index) private pure returns (uint256 wordPos, uint256 bitPos) {
         wordPos = uint248(index >> 8);
         bitPos = uint8(index);
     }
 
     /**
      * @notice Function to call token permit method of extended ERC20
-     + @param token ERC20 token address
+     *  + @param token ERC20 token address
      * @param amount Quantity that is expected to be allowed
      * @param permitData Raw data of the call `permit` of the token
      */
-    function _permit(
-        address token,
-        uint256 amount,
-        bytes calldata permitData
-    ) internal {
+    function _permit(address token, uint256 amount, bytes calldata permitData) internal {
         bytes4 sig = bytes4(permitData[:4]);
         if (sig == _PERMIT_SIGNATURE) {
-            (
-                address owner,
-                address spender,
-                uint256 value,
-                uint256 deadline,
-                uint8 v,
-                bytes32 r,
-                bytes32 s
-            ) = abi.decode(
-                    permitData[4:],
-                    (
-                        address,
-                        address,
-                        uint256,
-                        uint256,
-                        uint8,
-                        bytes32,
-                        bytes32
-                    )
-                );
+            (address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) =
+                abi.decode(permitData[4:], (address, address, uint256, uint256, uint8, bytes32, bytes32));
             if (owner != msg.sender) {
                 revert NotValidOwner();
             }
@@ -989,18 +875,7 @@ contract MockBridgeV2 is
             // the following transferFrom should be fail. This prevents DoS attacks from using a signature
             // before the smartcontract call
             /* solhint-disable avoid-low-level-calls */
-            address(token).call(
-                abi.encodeWithSelector(
-                    _PERMIT_SIGNATURE,
-                    owner,
-                    spender,
-                    value,
-                    deadline,
-                    v,
-                    r,
-                    s
-                )
-            );
+            address(token).call(abi.encodeWithSelector(_PERMIT_SIGNATURE, owner, spender, value, deadline, v, r, s));
         } else {
             if (sig != _PERMIT_SIGNATURE_DAI) {
                 revert NotValidSignature();
@@ -1015,19 +890,7 @@ contract MockBridgeV2 is
                 uint8 v,
                 bytes32 r,
                 bytes32 s
-            ) = abi.decode(
-                    permitData[4:],
-                    (
-                        address,
-                        address,
-                        uint256,
-                        uint256,
-                        bool,
-                        uint8,
-                        bytes32,
-                        bytes32
-                    )
-                );
+            ) = abi.decode(permitData[4:], (address, address, uint256, uint256, bool, uint8, bytes32, bytes32));
 
             if (holder != msg.sender) {
                 revert NotValidOwner();
@@ -1042,17 +905,7 @@ contract MockBridgeV2 is
             // before the smartcontract call
             /* solhint-disable avoid-low-level-calls */
             address(token).call(
-                abi.encodeWithSelector(
-                    _PERMIT_SIGNATURE_DAI,
-                    holder,
-                    spender,
-                    nonce,
-                    expiry,
-                    allowed,
-                    v,
-                    r,
-                    s
-                )
+                abi.encodeWithSelector(_PERMIT_SIGNATURE_DAI, holder, spender, nonce, expiry, allowed, v, r, s)
             );
         }
     }
@@ -1063,26 +916,19 @@ contract MockBridgeV2 is
      * tokenInfoHash will be used as salt for all wrappeds except for bridge native WETH, that will be bytes32(0)
      * @param constructorArgs Encoded constructor args for the wrapped token
      */
-    function _deployWrappedToken(
-        bytes32 salt,
-        bytes memory constructorArgs
-    ) internal returns (TokenWrapped newWrappedToken) {
-        bytes memory initBytecode = abi.encodePacked(
-            BASE_INIT_BYTECODE_WRAPPED_TOKEN,
-            constructorArgs
-        );
+    function _deployWrappedToken(bytes32 salt, bytes memory constructorArgs)
+        internal
+        returns (TokenWrapped newWrappedToken)
+    {
+        bytes memory initBytecode = abi.encodePacked(BASE_INIT_BYTECODE_WRAPPED_TOKEN, constructorArgs);
 
         /// @solidity memory-safe-assembly
         assembly {
-            newWrappedToken := create2(
-                0,
-                add(initBytecode, 0x20),
-                mload(initBytecode),
-                salt
-            )
+            newWrappedToken := create2(0, add(initBytecode, 0x20), mload(initBytecode), salt)
         }
-        if (address(newWrappedToken) == address(0))
+        if (address(newWrappedToken) == address(0)) {
             revert FailedTokenWrappedDeployment();
+        }
     }
 
     // Helpers to safely get the metadata from a token, inspired by https://github.com/traderjoe-xyz/joe-core/blob/main/contracts/MasterChefJoeV3.sol#L55-L95
@@ -1092,9 +938,8 @@ contract MockBridgeV2 is
      * @param token The address of the ERC-20 token contract
      */
     function _safeSymbol(address token) internal view returns (string memory) {
-        (bool success, bytes memory data) = address(token).staticcall(
-            abi.encodeCall(IERC20MetadataUpgradeable.symbol, ())
-        );
+        (bool success, bytes memory data) =
+            address(token).staticcall(abi.encodeCall(IERC20MetadataUpgradeable.symbol, ()));
         return success ? _returnDataToString(data) : "NO_SYMBOL";
     }
 
@@ -1103,9 +948,8 @@ contract MockBridgeV2 is
      * @param token The address of the ERC-20 token contract.
      */
     function _safeName(address token) internal view returns (string memory) {
-        (bool success, bytes memory data) = address(token).staticcall(
-            abi.encodeCall(IERC20MetadataUpgradeable.name, ())
-        );
+        (bool success, bytes memory data) =
+            address(token).staticcall(abi.encodeCall(IERC20MetadataUpgradeable.name, ()));
         return success ? _returnDataToString(data) : "NO_NAME";
     }
 
@@ -1115,9 +959,8 @@ contract MockBridgeV2 is
      * @param token The address of the ERC-20 token contract
      */
     function _safeDecimals(address token) internal view returns (uint8) {
-        (bool success, bytes memory data) = address(token).staticcall(
-            abi.encodeCall(IERC20MetadataUpgradeable.decimals, ())
-        );
+        (bool success, bytes memory data) =
+            address(token).staticcall(abi.encodeCall(IERC20MetadataUpgradeable.decimals, ()));
         return success && data.length == 32 ? abi.decode(data, (uint8)) : 18;
     }
 
@@ -1126,9 +969,7 @@ contract MockBridgeV2 is
      * returns 'NOT_VALID_ENCODING' as fallback value.
      * @param data returned data
      */
-    function _returnDataToString(
-        bytes memory data
-    ) internal pure returns (string memory) {
+    function _returnDataToString(bytes memory data) internal pure returns (string memory) {
         if (data.length >= 64) {
             return abi.decode(data, (string));
         } else if (data.length == 32) {
@@ -1157,16 +998,8 @@ contract MockBridgeV2 is
      * @notice Returns the encoded token metadata
      * @param token Address of the token
      */
-
-    function getTokenMetadata(
-        address token
-    ) public view returns (bytes memory) {
-        return
-            abi.encode(
-                _safeName(token),
-                _safeSymbol(token),
-                _safeDecimals(token)
-            );
+    function getTokenMetadata(address token) public view returns (bytes memory) {
+        return abi.encode(_safeName(token), _safeSymbol(token), _safeDecimals(token));
     }
 
     /**
@@ -1178,18 +1011,13 @@ contract MockBridgeV2 is
      * @param originTokenAddress Origin token address, 0 address is reserved for ether
      * @param token Address of the token to calculate the wrapper address
      */
-    function calculateTokenWrapperAddress(
-        uint32 originNetwork,
-        address originTokenAddress,
-        address token
-    ) external view returns (address) {
-        return
-            precalculatedWrapperAddress(
-                originNetwork,
-                originTokenAddress,
-                _safeName(token),
-                _safeSymbol(token),
-                _safeDecimals(token)
-            );
+    function calculateTokenWrapperAddress(uint32 originNetwork, address originTokenAddress, address token)
+        external
+        view
+        returns (address)
+    {
+        return precalculatedWrapperAddress(
+            originNetwork, originTokenAddress, _safeName(token), _safeSymbol(token), _safeDecimals(token)
+        );
     }
 }

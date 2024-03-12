@@ -30,7 +30,7 @@ contract SendToFallBackOnError is BaseTest {
         failContract = address(new FailingContract());
     }
 
-    function testCallFailsButSendsAssetsToFallback() public {
+    function testCallFailsButSendsERC20AssetsToFallback() public {
         vm.selectFork(_l1Fork);
         vm.startPrank(_alice);
         uint256 amount = _toDecimals(1000, 18);
@@ -42,7 +42,7 @@ contract SendToFallBackOnError is BaseTest {
             "",
             _l2NetworkId,
             failContract,
-            _bob, // fallback address
+            _chad, // fallback address
             abi.encodeWithSelector(bytes4(keccak256("doSomething()"))),
             true
         );
@@ -53,6 +53,33 @@ contract SendToFallBackOnError is BaseTest {
 
         // the bridgeAndCall to FailingContract reverts, so asset is routed to the fallback address (bob)
         vm.selectFork(_l2Fork);
-        assertEq(IERC20(_l2BWMatic).balanceOf(_bob), amount);
+        assertEq(IERC20(_l2BWMatic).balanceOf(_chad), amount);
+    }
+
+    function testCallFailsButSendsNativeETHToFallback() public {
+        vm.selectFork(_l1Fork);
+        deal(_alice, 10 ** 25); // fund alice
+
+        vm.startPrank(_alice);
+        uint256 amount = _toDecimals(1000, 18);
+
+        _l1BridgeExtension.bridgeAndCall{value: amount}(
+            address(0),
+            amount,
+            "",
+            _l2NetworkId,
+            failContract,
+            _chad, // fallback address
+            abi.encodeWithSelector(bytes4(keccak256("doSomething()"))),
+            true
+        );
+        vm.stopPrank();
+
+        // Claimer claims the asset+message
+        _mockClaim();
+
+        // the bridgeAndCall to FailingContract reverts, so asset is routed to the fallback address (bob)
+        vm.selectFork(_l2Fork);
+        assertEq(_chad.balance, amount);
     }
 }

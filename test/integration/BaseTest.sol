@@ -18,6 +18,7 @@ abstract contract BaseTest is Test {
     address internal _deployer;
     address internal _alice;
     address internal _bob;
+    address internal _chad;
     address internal _claimer;
 
     BridgeExtension internal _l1BridgeExtension;
@@ -35,6 +36,7 @@ abstract contract BaseTest is Test {
 
         _alice = vm.addr(1);
         _bob = vm.addr(2);
+        _chad = vm.addr(3);
         _claimer = vm.addr(8);
         _deployer = vm.addr(9);
 
