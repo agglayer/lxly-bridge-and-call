@@ -63,7 +63,7 @@ contract NativeConverter is BaseTest {
         assertEq(IERC20(_l2Usdc).balanceOf(_alice), 0);
 
         // Claimer claims the asset+message
-        _mockClaim();
+        _mockClaimL1ToL2();
 
         // check that the convert happened and Alice got the USDC
         vm.selectFork(_l2Fork);

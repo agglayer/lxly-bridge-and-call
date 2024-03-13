@@ -6,8 +6,8 @@ import "@zkevm/v2/PolygonZkEVMBridgeV2.sol";
 contract JumpPoint {
     constructor(
         address bridge,
-        uint32 originNetwork,
-        address originAssetAddress,
+        uint32 assetOriginalNetwork,
+        address assetOriginalAddress,
         address callAddress,
         address fallbackAddress,
         bytes memory callData
@@ -17,21 +17,33 @@ contract JumpPoint {
         // determine what got transferred to this jumppoint
         IERC20 asset;
         // origin asset is empty, then it's either gas token or weth
-        if (originAssetAddress == address(0)) {
+        if (assetOriginalAddress == address(0)) {
             // asset is WETHToken if exists, or native gas token
             asset = zkBridge.WETHToken();
         }
         // origin asset is not empty, then it's either gas token or erc20
         else {
-            if (originAssetAddress == zkBridge.gasTokenAddress() && originNetwork == zkBridge.gasTokenNetwork()) {
+            if (
+                assetOriginalAddress == zkBridge.gasTokenAddress() && assetOriginalNetwork == zkBridge.gasTokenNetwork()
+            ) {
                 // it was the native gas token (not eth)
                 // asset will be null (use msg.value)
             } else {
-                // it was another erc20
-                asset = IERC20(
-                    // NOTE: this weird logic is how we find the corresponding asset address in the current network
-                    zkBridge.tokenInfoToWrappedToken(keccak256(abi.encodePacked(originNetwork, originAssetAddress)))
-                );
+                // it was an erc20
+
+                // The token is an ERC20 from this network
+                if (assetOriginalNetwork == zkBridge.networkID()) {
+                    asset = IERC20(assetOriginalAddress);
+                }
+                // The token is an ERC20 NOT from this network
+                else {
+                    asset = IERC20(
+                        // NOTE: this weird logic is how we find the corresponding asset address in the current network
+                        zkBridge.tokenInfoToWrappedToken(
+                            keccak256(abi.encodePacked(assetOriginalNetwork, assetOriginalAddress))
+                        )
+                    );
+                }
             }
         }
 

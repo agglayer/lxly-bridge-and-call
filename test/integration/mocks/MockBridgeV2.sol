@@ -96,8 +96,10 @@ contract MockBridgeV2 is DepositContractV2, EmergencyManager, IPolygonZkEVMBridg
     // WETH address
     TokenWrapped public WETHToken;
 
-    BridgeMessage public lastBridgeAssetMsg;
-    BridgeMessage public lastBridgeMessageMsg;
+    mapping(uint32 originNetwork => BridgeMessage) public lastBridgeAssetMsg;
+    mapping(uint32 originNetwork => BridgeMessage) public lastBridgeMessageMsg;
+    // BridgeMessage public lastBridgeAssetMsg;
+    // BridgeMessage public lastBridgeMessageMsg;
 
     /**
      * @dev Emitted when bridge assets or messages to another network
@@ -330,7 +332,7 @@ contract MockBridgeV2 is DepositContractV2, EmergencyManager, IPolygonZkEVMBridg
             _updateGlobalExitRoot();
         }
 
-        lastBridgeAssetMsg =
+        lastBridgeAssetMsg[networkID] =
             BridgeMessage(originNetwork, originTokenAddress, destinationNetwork, destinationAddress, amount, metadata);
     }
 
@@ -355,7 +357,7 @@ contract MockBridgeV2 is DepositContractV2, EmergencyManager, IPolygonZkEVMBridg
 
         _bridgeMessage(destinationNetwork, destinationAddress, msg.value, forceUpdateGlobalExitRoot, metadata);
 
-        lastBridgeMessageMsg =
+        lastBridgeMessageMsg[networkID] =
             BridgeMessage(networkID, msg.sender, destinationNetwork, destinationAddress, msg.value, metadata);
     }
 

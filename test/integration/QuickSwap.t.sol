@@ -67,7 +67,7 @@ contract QuickSwap is BaseTest {
         assertEq(IERC20(_l2Matic).balanceOf(_bob), 0);
 
         // Claimer claims the asset+message
-        _mockClaim();
+        _mockClaimL1ToL2();
 
         // check that the swap happened and Bob got the MATIC
         vm.selectFork(_l2Fork);

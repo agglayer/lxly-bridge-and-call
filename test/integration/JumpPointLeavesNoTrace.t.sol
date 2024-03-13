@@ -47,7 +47,7 @@ contract JumpPointLeavesNoTrace is BaseTest {
         vm.stopPrank();
 
         // Claimer claims the asset+message
-        _mockClaim();
+        _mockClaimL1ToL2();
 
         // check that no code remains at the jumppoint address
         vm.selectFork(_l2Fork);

@@ -61,15 +61,7 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializabl
             }
 
             // transfer native gas token (e.g. eth) - using a helper to get rid of stack too deep
-            _bridgeNativeAssetHelper(
-                bridge.gasTokenAddress(),
-                amount,
-                destinationNetwork,
-                callAddress,
-                fallbackAddress,
-                callData,
-                dependsOnIndex
-            );
+            _bridgeNativeAssetHelper(amount, destinationNetwork, callAddress, fallbackAddress, callData, dependsOnIndex);
         } else {
             // user is bridging ERC20
             // transfer assets from caller to this extension
@@ -86,20 +78,59 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializabl
 
         bytes memory encodedMsg;
         if (token == address(bridge.WETHToken())) {
-            encodedMsg = abi.encode(dependsOnIndex, callAddress, fallbackAddress, address(0), callData);
+            encodedMsg =
+                abi.encode(dependsOnIndex, callAddress, fallbackAddress, bridge.networkID(), address(0), callData);
         } else if (token == address(0)) {
             // bridge the message (which gets encoded with extra data) to the extension on the destination network
-            encodedMsg = abi.encode(dependsOnIndex, callAddress, fallbackAddress, bridge.gasTokenAddress(), callData);
+            encodedMsg = abi.encode(
+                dependsOnIndex,
+                callAddress,
+                fallbackAddress,
+                bridge.gasTokenNetwork(),
+                bridge.gasTokenAddress(),
+                callData
+            );
         } else {
+            // we need to encode the correct token network/address
+            (uint32 assetOriginalNetwork, address assetOriginalAddr) = bridge.wrappedTokenToTokenInfo(token);
+            if (assetOriginalAddr == address(0)) {
+                // only do this when the token is not from this network
+                assetOriginalNetwork = bridge.networkID();
+                assetOriginalAddr = token;
+            }
+
             // bridge the message (which gets encoded with extra data) to the extension on the destination network
-            encodedMsg = abi.encode(dependsOnIndex, callAddress, fallbackAddress, token, callData);
+            encodedMsg = abi.encode(
+                dependsOnIndex, callAddress, fallbackAddress, assetOriginalNetwork, assetOriginalAddr, callData
+            );
         }
 
         bridge.bridgeMessage(destinationNetwork, address(this), forceUpdateGlobalExitRoot, encodedMsg);
     }
 
+    function _bridgeNativeWETHAssetHelper(
+        address token,
+        uint256 amount,
+        bytes calldata permitData,
+        uint32 destinationNetwork,
+        address callAddress,
+        address fallbackAddress,
+        bytes calldata callData,
+        uint256 dependsOnIndex
+    ) internal {
+        // pre-compute the address of the JumpPoint contract so we can bridge the assets
+        address jumpPointAddr = _computeJumpPointAddress(
+            dependsOnIndex, bridge.networkID(), address(0), callAddress, fallbackAddress, callData
+        );
+
+        // allow the bridge to take the assets
+        IERC20(token).approve(address(bridge), amount);
+
+        // bridge the ERC20 assets
+        bridge.bridgeAsset(destinationNetwork, jumpPointAddr, amount, token, false, permitData);
+    }
+
     function _bridgeNativeAssetHelper(
-        address originAssetAddress,
         uint256 amount,
         uint32 destinationNetwork,
         address callAddress,
@@ -108,8 +139,9 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializabl
         uint256 dependsOnIndex
     ) internal {
         // pre-compute the address of the JumpPoint contract so we can bridge the assets
-        address jumpPointAddr =
-            _computeJumpPointAddress(dependsOnIndex, originAssetAddress, callAddress, fallbackAddress, callData);
+        address jumpPointAddr = _computeJumpPointAddress(
+            dependsOnIndex, bridge.gasTokenNetwork(), bridge.gasTokenAddress(), callAddress, fallbackAddress, callData
+        );
 
         // bridge the native assets
         bridge.bridgeAsset{value: amount}(destinationNetwork, jumpPointAddr, amount, address(0), false, "");
@@ -125,32 +157,25 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializabl
         bytes calldata callData,
         uint256 dependsOnIndex
     ) internal {
+        address jumpPointAddr;
+
+        {
+            // we need to encode the correct token network/address
+            (uint32 assetOriginalNetwork, address assetOriginalAddr) = bridge.wrappedTokenToTokenInfo(token);
+            if (assetOriginalAddr == address(0)) {
+                // only do this when the token is not from this network
+                assetOriginalNetwork = bridge.networkID();
+                assetOriginalAddr = token;
+            }
+
+            // pre-compute the address of the JumpPoint contract so we can bridge the assets
+            jumpPointAddr = _computeJumpPointAddress(
+                dependsOnIndex, assetOriginalNetwork, assetOriginalAddr, callAddress, fallbackAddress, callData
+            );
+        }
+
         // allow the bridge to take the assets
         IERC20(token).approve(address(bridge), amount);
-
-        // pre-compute the address of the JumpPoint contract so we can bridge the assets
-        address jumpPointAddr = _computeJumpPointAddress(dependsOnIndex, token, callAddress, fallbackAddress, callData);
-
-        // bridge the ERC20 assets
-        bridge.bridgeAsset(destinationNetwork, jumpPointAddr, amount, token, false, permitData);
-    }
-
-    function _bridgeNativeWETHAssetHelper(
-        address token,
-        uint256 amount,
-        bytes calldata permitData,
-        uint32 destinationNetwork,
-        address callAddress,
-        address fallbackAddress,
-        bytes calldata callData,
-        uint256 dependsOnIndex
-    ) internal {
-        // allow the bridge to take the assets
-        IERC20(token).approve(address(bridge), amount);
-
-        // pre-compute the address of the JumpPoint contract so we can bridge the assets
-        address jumpPointAddr =
-            _computeJumpPointAddress(dependsOnIndex, address(0), callAddress, fallbackAddress, callData);
 
         // bridge the ERC20 assets
         bridge.bridgeAsset(destinationNetwork, jumpPointAddr, amount, token, false, permitData);
@@ -160,7 +185,8 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializabl
     /// NOTE: inlining into `_bridgeAssetHelper` triggers a `Stack too deep`.
     function _computeJumpPointAddress(
         uint256 dependsOnIndex,
-        address originAssetAddress,
+        uint32 assetNetwork,
+        address assetAddress,
         address callAddress,
         address fallbackAddress,
         bytes memory callData
@@ -169,14 +195,7 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializabl
         // of the JumpPoint instance in advance, in order to bridge the assets to it
         bytes memory bytecode = abi.encodePacked(
             type(JumpPoint).creationCode,
-            abi.encode(
-                address(bridge),
-                bridge.networkID(), // current network
-                originAssetAddress,
-                callAddress,
-                fallbackAddress,
-                callData
-            )
+            abi.encode(address(bridge), assetNetwork, assetAddress, callAddress, fallbackAddress, callData)
         );
 
         // this just follows the CREATE2 address computation algo
@@ -203,14 +222,15 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializabl
             uint256 dependsOnIndex,
             address callAddress,
             address fallbackAddress,
-            address originAssetAddress,
+            uint32 assetOriginalNetwork,
+            address assetOriginalAddress,
             bytes memory callData
-        ) = abi.decode(data, (uint256, address, address, address, bytes));
+        ) = abi.decode(data, (uint256, address, address, uint32, address, bytes));
         if (!bridge.isClaimed(uint32(dependsOnIndex), originNetwork)) revert UnclaimedAsset();
 
         // the remaining bytes have the selector+args
         new JumpPoint{salt: bytes32(dependsOnIndex)}(
-            address(bridge), originNetwork, originAssetAddress, callAddress, fallbackAddress, callData
+            address(bridge), assetOriginalNetwork, assetOriginalAddress, callAddress, fallbackAddress, callData
         );
     }
 }

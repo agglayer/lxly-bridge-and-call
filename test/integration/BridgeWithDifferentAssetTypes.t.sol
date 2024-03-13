@@ -85,7 +85,7 @@ contract BridgeWithDifferentAssetTypes is BaseTest {
         vm.stopPrank();
 
         // Claimer claims the asset+message
-        _mockClaim();
+        _mockClaimL1ToL2();
 
         // check that the call ran as expected
         vm.selectFork(_l2Fork);
@@ -119,7 +119,7 @@ contract BridgeWithDifferentAssetTypes is BaseTest {
         vm.stopPrank();
 
         // Claimer claims the asset+message
-        _mockClaim();
+        _mockClaimL1ToL2();
 
         // check that the call ran as expected
         vm.selectFork(_l2Fork);
@@ -155,7 +155,7 @@ contract BridgeWithDifferentAssetTypes is BaseTest {
         vm.stopPrank();
 
         // Claimer claims the asset+message
-        _mockClaim();
+        _mockClaimL1ToL2();
 
         // check that the call ran as expected
         vm.selectFork(_l2Fork);
@@ -194,7 +194,7 @@ contract BridgeWithDifferentAssetTypes is BaseTest {
         vm.stopPrank();
 
         // Claimer claims the asset+message
-        _mockClaim();
+        _mockClaimL1ToL2();
 
         // check that the call ran as expected
         vm.selectFork(_l2Fork);
@@ -233,7 +233,7 @@ contract BridgeWithDifferentAssetTypes is BaseTest {
         vm.stopPrank();
 
         // Claimer claims the asset+message
-        _mockClaim();
+        _mockClaimL1ToL2();
 
         // check that the call ran as expected
         vm.selectFork(_l2Fork);
@@ -273,7 +273,7 @@ contract BridgeWithDifferentAssetTypes is BaseTest {
         vm.stopPrank();
 
         // Claimer claims the asset+message
-        _mockClaim();
+        _mockClaimL1ToL2();
 
         // check that the call ran as expected
         vm.selectFork(_l2Fork);
@@ -316,7 +316,7 @@ contract BridgeWithDifferentAssetTypes is BaseTest {
         vm.stopPrank();
 
         // Claimer claims the asset+message
-        _mockClaim();
+        _mockClaimL1ToL2();
 
         // check that the call ran as expected
         vm.selectFork(_l2Fork);
@@ -359,7 +359,7 @@ contract BridgeWithDifferentAssetTypes is BaseTest {
         vm.stopPrank();
 
         // Claimer claims the asset+message
-        _mockClaim();
+        _mockClaimL1ToL2();
 
         // check that the call ran as expected
         vm.selectFork(_l2Fork);
@@ -400,7 +400,7 @@ contract BridgeWithDifferentAssetTypes is BaseTest {
         vm.stopPrank();
 
         // Claimer claims the asset+message
-        _mockClaim();
+        _mockClaimL1ToL2();
 
         // check that the call ran as expected
         vm.selectFork(_l2Fork);
@@ -439,7 +439,7 @@ contract BridgeWithDifferentAssetTypes is BaseTest {
         vm.stopPrank();
 
         // Claimer claims the asset+message
-        _mockClaim();
+        _mockClaimL1ToL2();
 
         // check that the call ran as expected
         vm.selectFork(_l2Fork);
@@ -482,7 +482,7 @@ contract BridgeWithDifferentAssetTypes is BaseTest {
         vm.stopPrank();
 
         // Claimer claims the asset+message
-        _mockClaim();
+        _mockClaimL1ToL2();
 
         // check that the call ran as expected
         vm.selectFork(_l2Fork);
@@ -526,7 +526,7 @@ contract BridgeWithDifferentAssetTypes is BaseTest {
         vm.stopPrank();
 
         // Claimer claims the asset+message
-        _mockClaim();
+        _mockClaimL1ToL2();
 
         // check that the call ran as expected
         vm.selectFork(_l2Fork);
@@ -571,7 +571,7 @@ contract BridgeWithDifferentAssetTypes is BaseTest {
         vm.stopPrank();
 
         // Claimer claims the asset+message
-        _mockClaim();
+        _mockClaimL1ToL2();
 
         // check that the call ran as expected
         vm.selectFork(_l2Fork);

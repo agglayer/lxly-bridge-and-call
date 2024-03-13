@@ -93,7 +93,7 @@ abstract contract BaseTest is Test {
             address destinationAddress,
             uint256 amount,
             bytes memory metadata
-        ) = b.lastBridgeAssetMsg();
+        ) = b.lastBridgeAssetMsg(uint32(from));
 
         // proof and index can be empty because our MockBridgeV2 bypasses the merkle tree verification
         // i.e. _verifyLeaf is always successful
@@ -128,7 +128,7 @@ abstract contract BaseTest is Test {
             address destinationAddress,
             uint256 amount,
             bytes memory metadata
-        ) = b.lastBridgeMessageMsg();
+        ) = b.lastBridgeMessageMsg(uint32(from));
 
         // proof can be empty because our MockBridgeV2 bypasses the merkle tree verification
         // i.e. _verifyLeaf is always successful
@@ -151,10 +151,17 @@ abstract contract BaseTest is Test {
         );
     }
 
-    function _mockClaim() internal {
+    function _mockClaimL1ToL2() internal {
         vm.startPrank(_claimer);
         _mockClaimAsset(_l1Fork, _l2Fork);
         _mockClaimMessage(_l1Fork, _l2Fork);
+        vm.stopPrank();
+    }
+
+    function _mockClaimL2ToL1() internal {
+        vm.startPrank(_claimer);
+        _mockClaimAsset(_l2Fork, _l1Fork);
+        _mockClaimMessage(_l2Fork, _l1Fork);
         vm.stopPrank();
     }
 

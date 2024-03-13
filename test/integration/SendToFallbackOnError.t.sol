@@ -49,7 +49,7 @@ contract SendToFallBackOnError is BaseTest {
         vm.stopPrank();
 
         // Claimer claims the asset+message
-        _mockClaim();
+        _mockClaimL1ToL2();
 
         // the bridgeAndCall to FailingContract reverts, so asset is routed to the fallback address (bob)
         vm.selectFork(_l2Fork);
@@ -76,7 +76,7 @@ contract SendToFallBackOnError is BaseTest {
         vm.stopPrank();
 
         // Claimer claims the asset+message
-        _mockClaim();
+        _mockClaimL1ToL2();
 
         // the bridgeAndCall to FailingContract reverts, so asset is routed to the fallback address (bob)
         vm.selectFork(_l2Fork);

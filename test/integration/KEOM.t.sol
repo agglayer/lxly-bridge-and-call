@@ -61,7 +61,7 @@ contract KEOM is BaseTest {
         assertEq(IERC20(_l2kMatic).balanceOf(_alice), 0);
 
         // Claimer claims the asset+message
-        _mockClaim();
+        _mockClaimL1ToL2();
 
         vm.selectFork(_l2Fork);
         assertGt(IERC20(_l2kMatic).balanceOf(_alice), 0); // 4954050148480
