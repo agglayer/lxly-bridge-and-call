@@ -32,6 +32,17 @@ forge test -vvvvv --match-contract QuickSwap
 forge test -vvvvv --match-contract KEOM
 ```
 
+NOTE: `testBridgeFromL2AndCallL1Uniswap` might fail due to exchange rates, if you're not forking the expected block number. You can manually change the expected exchange rate in `ZkEVM2ETHMainnet.t.sol#L124`.
+
 ### Deployment (Mainnet Forks)
 
-TODO
+**NOTE: BridgeExtension (proxy) must be deployed to the same address in all chains**
+
+TODO: create easier interfaces for bridging assets (gas token, lx weth, erc20)
+TODO: helper claimBridgeAndCall function
+
+## Relevant Information
+
+- [Bridge Asset Scenarios](https://docs.google.com/spreadsheets/d/1lBktJ5HSGwVXTzxm-eWCVhPGJKF22YvM59VaQBGLHMY)
+
+![gm](./bridge-and-call.excalidraw.png)
