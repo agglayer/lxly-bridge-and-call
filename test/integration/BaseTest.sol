@@ -68,14 +68,14 @@ abstract contract BaseTest is Test {
         // deploy L1 Bridge Extension
         vm.selectFork(_l1Fork);
         BridgeExtensionProxy bep1 = new BridgeExtensionProxy{salt: bytes32(salt)}(
-            _deployer, address(new BridgeExtension{salt: bytes32(salt)}()), _deployer, _bridge
+            _deployer, address(new BridgeExtension{salt: bytes32(salt)}()), _bridge
         );
         _l1BridgeExtension = BridgeExtension(address(bep1));
 
         // deploy L2 Bridge Extension
         vm.selectFork(_l2Fork);
         BridgeExtensionProxy bep2 = new BridgeExtensionProxy{salt: bytes32(salt)}(
-            _deployer, address(new BridgeExtension{salt: bytes32(salt)}()), _deployer, _bridge
+            _deployer, address(new BridgeExtension{salt: bytes32(salt)}()), _bridge
         );
         _l2BridgeExtension = BridgeExtension(address(bep2));
 

@@ -10,10 +10,10 @@ interface IPolygonBridge {
 }
 
 contract EthProcessor {
-    address internal bridge;
+    address internal _bridge;
 
     constructor(address bridge_) {
-        bridge = bridge_;
+        _bridge = bridge_;
     }
 
     function splitGasToken(address alice, address bob) external payable {
@@ -25,8 +25,8 @@ contract EthProcessor {
         assert(sentAlice == sentBob == true);
     }
 
-    function _splitERC20(address erc20, address first, address second, uint256 amount) internal {
-        IERC20 erc20 = IERC20(erc20);
+    function _splitERC20(address token, address first, address second, uint256 amount) internal {
+        IERC20 erc20 = IERC20(token);
         erc20.transferFrom(msg.sender, address(this), amount);
 
         uint256 splitAmt = amount / 2;
@@ -45,8 +45,7 @@ contract EthProcessor {
     }
 
     function splitNativeWETH(address alice, address bob, uint256 amount) external payable {
-        IPolygonBridge bridge = IPolygonBridge(bridge);
-        _splitERC20(bridge.WETHToken(), alice, bob, amount);
+        _splitERC20(IPolygonBridge(_bridge).WETHToken(), alice, bob, amount);
     }
 }
 

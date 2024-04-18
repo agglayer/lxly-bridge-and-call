@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "@zkevm/interfaces/IBridgeMessageReceiver.sol";
@@ -17,17 +16,16 @@ error OriginMustBeBridgeExtension();
 error SenderMustBeBridge();
 error UnclaimedAsset();
 
-contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializable, Ownable {
+contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializable {
     using SafeERC20 for IERC20;
 
     PolygonZkEVMBridgeV2 public bridge;
 
-    constructor() Ownable() {}
+    constructor() {}
 
-    function initialize(address owner_, address bridge_) external initializer {
+    function initialize(address bridge_) external initializer {
         if (bridge_ == address(0)) revert InvalidAddress();
 
-        _transferOwnership(owner_);
         bridge = PolygonZkEVMBridgeV2(bridge_);
     }
 

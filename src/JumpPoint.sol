@@ -56,6 +56,8 @@ contract JumpPoint {
             (bool success,) = callAddress.call{value: balance}(callData);
 
             // if call was unsuccessful, then transfer the native token to the fallback address
+            // ATTN: if the transfer to fallback is unsuccessful (maybe it's a contract that does not allow receive)
+            // then the native gas token will be stuck in this instance of the JumpPoint
             if (!success) fallbackAddress.call{value: balance}("");
         } else {
             uint256 balance = asset.balanceOf(address(this)); // because we don't receive the amount
