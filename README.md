@@ -34,9 +34,16 @@ forge test -vvvvv --match-contract KEOM
 
 NOTE: `testBridgeFromL2AndCallL1Uniswap` might fail due to exchange rates, if you're not forking the expected block number. You can manually change the expected exchange rate in `ZkEVM2ETHMainnet.t.sol#L124`.
 
-### Deployment (Mainnet Forks)
+### Deployment
 
 **NOTE: BridgeExtension (proxy) must be deployed to the same address in all chains**
+
+setup the `DEPLOYER_PRIVATE_KEY`, `ADDRESS_PROXY_ADMIN`, `ADDRESS_LXLY_BRIDGE` and run
+
+```
+export RPC=
+forge script script/DeployInitBridgeAndCall.s.sol:DeployInitBridgeAndCall --rpc-url ${RPC} -vvvvv --legacy --broadcast
+```
 
 TODO: create easier interfaces for bridging assets (gas token, lx weth, erc20)
 TODO: helper claimBridgeAndCall function
