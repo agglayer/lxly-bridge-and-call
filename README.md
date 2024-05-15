@@ -45,8 +45,11 @@ export RPC=
 forge script script/DeployInitBridgeAndCall.s.sol:DeployInitBridgeAndCall --rpc-url ${RPC} -vvvvv --legacy --broadcast
 ```
 
-TODO: create easier interfaces for bridging assets (gas token, lx weth, erc20)
-TODO: helper claimBridgeAndCall function
+## TODOs
+
+- TODO: create easier interfaces for bridging assets (gas token, lx weth, erc20)
+- TODO: helper claimBridgeAndCall function
+- TODO: ethers/viem example calling bridgeAndCall
 
 ## Relevant Information
 
