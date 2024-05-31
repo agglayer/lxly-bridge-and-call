@@ -4,6 +4,8 @@ pragma solidity ^0.8.20;
 import "@zkevm/v2/PolygonZkEVMBridgeV2.sol";
 
 contract JumpPoint {
+    using SafeERC20Upgradeable for IERC20Upgradeable;
+
     constructor(
         address bridge,
         uint32 assetOriginalNetwork,
@@ -15,11 +17,11 @@ contract JumpPoint {
         PolygonZkEVMBridgeV2 zkBridge = PolygonZkEVMBridgeV2(bridge);
 
         // determine what got transferred to this jumppoint
-        IERC20 asset;
+        IERC20Upgradeable asset;
         // origin asset is empty, then it's either gas token or weth
         if (assetOriginalAddress == address(0)) {
             // asset is WETHToken if exists, or native gas token
-            asset = zkBridge.WETHToken();
+            asset = IERC20Upgradeable(address(zkBridge.WETHToken()));
         }
         // origin asset is not empty, then it's either gas token or erc20
         else {
@@ -33,11 +35,11 @@ contract JumpPoint {
 
                 // The token is an ERC20 from this network
                 if (assetOriginalNetwork == zkBridge.networkID()) {
-                    asset = IERC20(assetOriginalAddress);
+                    asset = IERC20Upgradeable(assetOriginalAddress);
                 }
                 // The token is an ERC20 NOT from this network
                 else {
-                    asset = IERC20(
+                    asset = IERC20Upgradeable(
                         // NOTE: this weird logic is how we find the corresponding asset address in the current network
                         zkBridge.tokenInfoToWrappedToken(
                             keccak256(abi.encodePacked(assetOriginalNetwork, assetOriginalAddress))
@@ -67,7 +69,7 @@ contract JumpPoint {
             (bool success,) = callAddress.call(callData);
 
             // if call was unsuccessful, then transfer the asset to the fallback address
-            if (!success) asset.transfer(fallbackAddress, balance);
+            if (!success) asset.safeTransfer(fallbackAddress, balance);
         }
 
         // perform a cleanup
