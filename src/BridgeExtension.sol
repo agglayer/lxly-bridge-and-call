@@ -171,6 +171,9 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializabl
                 // only do this when the token is not from this network
                 assetOriginalNetwork = bridge.networkID();
                 assetOriginalAddr = token;
+
+                // allow the bridge to take the assets when needed - in the other scenarios the token is a wrapper that is burned
+                IERC20(token).approve(address(bridge), amount);
             }
 
             // pre-compute the address of the JumpPoint contract so we can bridge the assets
@@ -178,9 +181,6 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializabl
                 dependsOnIndex, assetOriginalNetwork, assetOriginalAddr, callAddress, fallbackAddress, callData
             );
         }
-
-        // allow the bridge to take the assets
-        IERC20(token).approve(address(bridge), amount);
 
         // bridge the ERC20 assets
         bridge.bridgeAsset(destinationNetwork, jumpPointAddr, amount, token, false, "");
