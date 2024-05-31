@@ -5,7 +5,6 @@ interface IBridgeAndCall {
     function bridgeAndCall(
         address token,
         uint256 amount,
-        bytes calldata permitData,
         uint32 destinationNetwork,
         address callAddress,
         address fallbackAddress,

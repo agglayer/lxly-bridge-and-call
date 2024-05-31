@@ -53,13 +53,7 @@ contract QuickSwap is BaseTest {
         vm.startPrank(_alice);
         uint256 amount = _toDecimals(1000, 6);
         IERC20(_l1Usdc).approve(address(_l1SenderContract), amount);
-        _l1SenderContract.buyL2TokenWithL1Token(
-            _l1Usdc,
-            _l2Matic,
-            amount,
-            "", // no permit data
-            _bob
-        );
+        _l1SenderContract.buyL2TokenWithL1Token(_l1Usdc, _l2Matic, amount, _bob);
         vm.stopPrank();
 
         // check that Bob doesn't have any L2 MATIC yet

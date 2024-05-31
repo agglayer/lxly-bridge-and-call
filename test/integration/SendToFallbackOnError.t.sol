@@ -39,7 +39,6 @@ contract SendToFallBackOnError is BaseTest {
         _l1BridgeExtension.bridgeAndCall(
             _l1Matic,
             amount,
-            "",
             _l2NetworkId,
             failContract,
             _chad, // fallback address
@@ -66,7 +65,6 @@ contract SendToFallBackOnError is BaseTest {
         _l1BridgeExtension.bridgeAndCall{value: amount}(
             address(0),
             amount,
-            "",
             _l2NetworkId,
             failContract,
             _chad, // fallback address

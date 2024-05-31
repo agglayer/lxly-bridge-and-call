@@ -48,7 +48,6 @@ contract KEOM is BaseTest {
         _l1BridgeExtension.bridgeAndCall(
             _l1Matic,
             amount,
-            "",
             _l2NetworkId,
             _keomDepositor,
             address(0), // fallback address

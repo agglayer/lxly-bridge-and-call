@@ -33,7 +33,6 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializabl
     function bridgeAndCall(
         address token,
         uint256 amount,
-        bytes calldata permitData,
         uint32 destinationNetwork,
         address callAddress,
         address fallbackAddress,
@@ -55,7 +54,7 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializabl
 
             // transfer the erc20 - using a helper to get rid of stack too deep
             _bridgeNativeWETHAssetHelper(
-                token, amount, permitData, destinationNetwork, callAddress, fallbackAddress, callData, dependsOnIndex
+                token, amount, destinationNetwork, callAddress, fallbackAddress, callData, dependsOnIndex
             );
         } else if (token == address(0)) {
             // user is bridging the gas token
@@ -77,7 +76,7 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializabl
 
             // transfer the erc20 - using a helper to get rid of stack too deep
             _bridgeERC20AssetHelper(
-                token, amount, permitData, destinationNetwork, callAddress, fallbackAddress, callData, dependsOnIndex
+                token, amount, destinationNetwork, callAddress, fallbackAddress, callData, dependsOnIndex
             );
         }
 
@@ -119,7 +118,6 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializabl
     function _bridgeNativeWETHAssetHelper(
         address token,
         uint256 amount,
-        bytes calldata permitData,
         uint32 destinationNetwork,
         address callAddress,
         address fallbackAddress,
@@ -135,7 +133,7 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializabl
         IERC20(token).approve(address(bridge), amount);
 
         // bridge the ERC20 assets
-        bridge.bridgeAsset(destinationNetwork, jumpPointAddr, amount, token, false, permitData);
+        bridge.bridgeAsset(destinationNetwork, jumpPointAddr, amount, token, false, "");
     }
 
     function _bridgeNativeAssetHelper(
@@ -158,7 +156,6 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializabl
     function _bridgeERC20AssetHelper(
         address token,
         uint256 amount,
-        bytes calldata permitData,
         uint32 destinationNetwork,
         address callAddress,
         address fallbackAddress,
@@ -186,7 +183,7 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializabl
         IERC20(token).approve(address(bridge), amount);
 
         // bridge the ERC20 assets
-        bridge.bridgeAsset(destinationNetwork, jumpPointAddr, amount, token, false, permitData);
+        bridge.bridgeAsset(destinationNetwork, jumpPointAddr, amount, token, false, "");
     }
 
     /// @dev Helper function to pre-compute the jumppoint address (the contract pseudo-deployed using create2).

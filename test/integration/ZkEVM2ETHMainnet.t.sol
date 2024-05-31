@@ -58,7 +58,6 @@ contract Uniswapper {
         _bridgeExtension.bridgeAndCall(
             tokenOut,
             amount,
-            "",
             1, // network id for L2
             _l2NativeConverter,
             address(0), // fallback
@@ -98,7 +97,6 @@ contract ZkEVM2ETHMainnet is BaseTest {
         _l2BridgeExtension.bridgeAndCall(
             l2wmaticAddr,
             amount,
-            "",
             _l1NetworkId,
             _targetContract,
             address(0), // fallback

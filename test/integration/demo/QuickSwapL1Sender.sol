@@ -38,13 +38,9 @@ contract QuickSwapL1Sender {
         l2Receiver = l2Receiver_;
     }
 
-    function buyL2TokenWithL1Token(
-        address l1Token,
-        address l2Token,
-        uint256 amountToSpend,
-        bytes calldata permitData,
-        address receiver
-    ) external {
+    function buyL2TokenWithL1Token(address l1Token, address l2Token, uint256 amountToSpend, address receiver)
+        external
+    {
         // transfer the assets from the caller to this contract (the extension will take it from here)
         IERC20(l1Token).safeTransferFrom(msg.sender, address(this), amountToSpend);
         // allow the extension to take the assets
@@ -75,7 +71,6 @@ contract QuickSwapL1Sender {
         l1BridgeExtension.bridgeAndCall(
             l1Token,
             amountToSpend,
-            permitData,
             l2NetworkId,
             l2Receiver, // the receiver contract in L2
             address(0), // fallback address

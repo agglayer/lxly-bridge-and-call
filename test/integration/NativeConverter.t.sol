@@ -49,7 +49,6 @@ contract NativeConverter is BaseTest {
         _l1BridgeExtension.bridgeAndCall(
             _l1Usdc,
             amount,
-            "", // no permit data
             _l2NetworkId,
             _nativeConverter,
             address(0), // fallback address

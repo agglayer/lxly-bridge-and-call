@@ -43,7 +43,7 @@ contract JumpPointLeavesNoTrace is BaseTest {
         vm.startPrank(_alice);
         uint256 amount = _toDecimals(1000, 18);
         IERC20(_l1Matic).approve(address(_l1BridgeExtension), amount);
-        _l1BridgeExtension.bridgeAndCall(_l1Matic, amount, "", _l2NetworkId, _targetContract, _bob, callData, true);
+        _l1BridgeExtension.bridgeAndCall(_l1Matic, amount, _l2NetworkId, _targetContract, _bob, callData, true);
         vm.stopPrank();
 
         // Claimer claims the asset+message

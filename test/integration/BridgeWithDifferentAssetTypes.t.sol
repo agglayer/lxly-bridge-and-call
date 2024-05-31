@@ -74,7 +74,6 @@ contract BridgeWithDifferentAssetTypes is BaseTest {
         _l1BridgeExtension.bridgeAndCall{value: amount}(
             address(0),
             amount,
-            "",
             _l2NetworkId,
             _targetContract,
             address(0),
@@ -108,7 +107,6 @@ contract BridgeWithDifferentAssetTypes is BaseTest {
         _l1BridgeExtension.bridgeAndCall(
             l1MaticAddr,
             amount,
-            "",
             _l2NetworkId,
             _targetContract,
             address(0),
@@ -144,7 +142,6 @@ contract BridgeWithDifferentAssetTypes is BaseTest {
         _l1BridgeExtension.bridgeAndCall{value: amount}(
             address(0),
             amount,
-            "",
             _l2NetworkId,
             _targetContract,
             address(0),
@@ -183,7 +180,6 @@ contract BridgeWithDifferentAssetTypes is BaseTest {
         _l1BridgeExtension.bridgeAndCall(
             l1MaticAddr,
             amount,
-            "",
             _l2NetworkId,
             _targetContract,
             address(0),
@@ -222,7 +218,6 @@ contract BridgeWithDifferentAssetTypes is BaseTest {
         _l1BridgeExtension.bridgeAndCall(
             l1MaticAddr,
             amount,
-            "",
             _l2NetworkId,
             _targetContract,
             address(0),
@@ -262,7 +257,6 @@ contract BridgeWithDifferentAssetTypes is BaseTest {
         _l1BridgeExtension.bridgeAndCall{value: amount}(
             address(0),
             amount,
-            "",
             _l2NetworkId,
             _targetContract,
             address(0),
@@ -305,7 +299,6 @@ contract BridgeWithDifferentAssetTypes is BaseTest {
         _l1BridgeExtension.bridgeAndCall(
             lxWethAddr,
             amount,
-            "",
             _l2NetworkId,
             _targetContract,
             address(0),
@@ -348,7 +341,6 @@ contract BridgeWithDifferentAssetTypes is BaseTest {
         _l1BridgeExtension.bridgeAndCall(
             l1MaticAddr,
             amount,
-            "",
             _l2NetworkId,
             _targetContract,
             address(0),
@@ -389,7 +381,6 @@ contract BridgeWithDifferentAssetTypes is BaseTest {
         _l1BridgeExtension.bridgeAndCall{value: amount}(
             address(0),
             amount,
-            "",
             _l2NetworkId,
             _targetContract,
             address(0),
@@ -428,7 +419,6 @@ contract BridgeWithDifferentAssetTypes is BaseTest {
         _l1BridgeExtension.bridgeAndCall(
             lxWethAddr,
             amount,
-            "",
             _l2NetworkId,
             _targetContract,
             address(0),
@@ -471,7 +461,6 @@ contract BridgeWithDifferentAssetTypes is BaseTest {
         _l1BridgeExtension.bridgeAndCall(
             lxWethAddr,
             amount,
-            "",
             _l2NetworkId,
             _targetContract,
             address(0),
@@ -515,7 +504,6 @@ contract BridgeWithDifferentAssetTypes is BaseTest {
         _l1BridgeExtension.bridgeAndCall(
             l1Wbtc,
             amount,
-            "",
             _l2NetworkId,
             _targetContract,
             address(0),
@@ -560,7 +548,6 @@ contract BridgeWithDifferentAssetTypes is BaseTest {
         _l1BridgeExtension.bridgeAndCall(
             l1MaticAddr,
             amount,
-            "",
             _l2NetworkId,
             _targetContract,
             address(0),
