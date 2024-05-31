@@ -44,9 +44,14 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializabl
         uint256 dependsOnIndex = bridge.depositCount() + 1; // only doing 1 bridge asset
 
         if (token != address(0) && token == address(bridge.WETHToken())) {
-            // user is bridging ERC20
+            // user is bridging ERC20 (WETH)
+            uint256 balanceBefore = IERC20(token).balanceOf(address(this)); // WETH will only be taxable if it's modified by the chain operator
+
             // transfer assets from caller to this extension
             IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+
+            uint256 balanceAfter = IERC20(token).balanceOf(address(this));
+            amount = balanceAfter - balanceBefore;
 
             // transfer the erc20 - using a helper to get rid of stack too deep
             _bridgeNativeWETHAssetHelper(
@@ -61,9 +66,14 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializabl
             // transfer native gas token (e.g. eth) - using a helper to get rid of stack too deep
             _bridgeNativeAssetHelper(amount, destinationNetwork, callAddress, fallbackAddress, callData, dependsOnIndex);
         } else {
-            // user is bridging ERC20
+            // user is bridging ERC20 - beware of tax tokens
+            uint256 balanceBefore = IERC20(token).balanceOf(address(this));
+
             // transfer assets from caller to this extension
             IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+
+            uint256 balanceAfter = IERC20(token).balanceOf(address(this));
+            amount = balanceAfter - balanceBefore;
 
             // transfer the erc20 - using a helper to get rid of stack too deep
             _bridgeERC20AssetHelper(
