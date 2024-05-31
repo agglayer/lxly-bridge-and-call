@@ -75,7 +75,7 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializabl
         if (dependsOnIndex != bridge.depositCount()) revert InvalidDepositIndex();
 
         bytes memory encodedMsg;
-        if (token == address(bridge.WETHToken())) {
+        if (token != address(0) && token == address(bridge.WETHToken())) {
             encodedMsg =
                 abi.encode(dependsOnIndex, callAddress, fallbackAddress, bridge.networkID(), address(0), callData);
         } else if (token == address(0)) {
