@@ -129,10 +129,7 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializabl
             dependsOnIndex, bridge.networkID(), address(0), callAddress, fallbackAddress, callData
         );
 
-        // allow the bridge to take the assets
-        IERC20(token).approve(address(bridge), amount);
-
-        // bridge the ERC20 assets
+        // bridge the ERC20 assets - no need to approve, bridge will burn the tokens
         bridge.bridgeAsset(destinationNetwork, jumpPointAddr, amount, token, false, "");
     }
 
