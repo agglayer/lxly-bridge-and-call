@@ -1,6 +1,6 @@
 # uLXLY BRIDGE AND CALL
 
-NOTE: Work in Progress. Unaudited.
+NOTE: Work in Progress.
 
 ## Testing and Deploying
 
