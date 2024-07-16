@@ -1,7 +1,5 @@
 # uLXLY BRIDGE AND CALL
 
-NOTE: Work in Progress.
-
 ## Testing and Deploying
 
 First, copy `.env.example` to `.env` and set the appropriate environment variables (annotated with TODOs).
@@ -45,13 +43,19 @@ export RPC=
 forge script script/DeployInitBridgeAndCall.s.sol:DeployInitBridgeAndCall --rpc-url ${RPC} -vvvvv --legacy --broadcast
 ```
 
-## TODOs
+## Audit
 
-- TODO: create easier interfaces for bridging assets (gas token, lx weth, erc20)
-- TODO: helper claimBridgeAndCall function
-- TODO: ethers/viem example calling bridgeAndCall
+https://github.com/agglayer/lxly-bridge-and-call/tree/main/audit
+
+## Future Work
+
+- create easier interfaces for bridging assets (gas token, lx weth, erc20)
+- helper claimBridgeAndCall function
+- ethers/viem example calling bridgeAndCall
 
 ## Relevant Information
+
+- [Demos Repository](https://github.com/AggLayer/lxly-bridge-and-call-demos/)
 
 - [Bridge Asset Scenarios](https://docs.google.com/spreadsheets/d/1lBktJ5HSGwVXTzxm-eWCVhPGJKF22YvM59VaQBGLHMY)
 
