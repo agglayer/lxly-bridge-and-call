@@ -200,12 +200,15 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializabl
             abi.encode(address(bridge), assetNetwork, assetAddress, callAddress, fallbackAddress, callData)
         );
 
+        // Get origin network to guarantee a unique JumpPoint with dependsOnIndex (depositCount)
+        uint32 originNetwork = bridge.networkID();
+
         // this just follows the CREATE2 address computation algo
         bytes32 hash = keccak256(
             abi.encodePacked(
                 bytes1(0xff),
                 address(this), // deployer = counterparty bridge extension AKA "this"
-                bytes32(dependsOnIndex), // salt = the depends on index
+                keccak256(abi.encodePacked(dependsOnIndex, originNetwork)), // salt = the depends on index
                 keccak256(bytecode)
             )
         );
@@ -231,7 +234,7 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializabl
         if (!bridge.isClaimed(uint32(dependsOnIndex), originNetwork)) revert UnclaimedAsset();
 
         // the remaining bytes have the selector+args
-        new JumpPoint{salt: bytes32(dependsOnIndex)}(
+        new JumpPoint{salt: keccak256(abi.encodePacked(dependsOnIndex, originNetwork))}(
             address(bridge), assetOriginalNetwork, assetOriginalAddress, callAddress, fallbackAddress, callData
         );
     }
