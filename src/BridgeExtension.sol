@@ -85,8 +85,9 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializabl
 
         bytes memory encodedMsg;
         if (token != address(0) && token == address(bridge.WETHToken())) {
+            // WETHs originNetwork is always 0 as it is a special case
             encodedMsg =
-                abi.encode(dependsOnIndex, callAddress, fallbackAddress, bridge.networkID(), address(0), callData);
+                abi.encode(dependsOnIndex, callAddress, fallbackAddress, 0, address(0), callData);
         } else if (token == address(0)) {
             // bridge the message (which gets encoded with extra data) to the extension on the destination network
             encodedMsg = abi.encode(
