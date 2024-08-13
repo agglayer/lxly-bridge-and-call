@@ -102,7 +102,7 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializabl
             // we need to encode the correct token network/address
             (uint32 assetOriginalNetwork, address assetOriginalAddr) = bridge.wrappedTokenToTokenInfo(token);
             if (assetOriginalAddr == address(0)) {
-                // only do this when the token is not from this network
+                // only do this when the token is from this network
                 assetOriginalNetwork = bridge.networkID();
                 assetOriginalAddr = token;
             }
@@ -166,7 +166,7 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializabl
             // we need to encode the correct token network/address
             (uint32 assetOriginalNetwork, address assetOriginalAddr) = bridge.wrappedTokenToTokenInfo(token);
             if (assetOriginalAddr == address(0)) {
-                // only do this when the token is not from this network
+                // only do this when the token is from this network
                 assetOriginalNetwork = bridge.networkID();
                 assetOriginalAddr = token;
 
