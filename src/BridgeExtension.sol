@@ -127,7 +127,7 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializabl
     ) internal {
         // pre-compute the address of the JumpPoint contract so we can bridge the assets
         address jumpPointAddr = _computeJumpPointAddress(
-            dependsOnIndex, bridge.networkID(), address(0), callAddress, fallbackAddress, callData
+            dependsOnIndex, 0, address(0), callAddress, fallbackAddress, callData
         );
 
         // bridge the ERC20 assets - no need to approve, bridge will burn the tokens
