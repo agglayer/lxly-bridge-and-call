@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Upgrade.sol";
 
 import "@zkevm/interfaces/IBridgeMessageReceiver.sol";
 import "@zkevm/v2/PolygonZkEVMBridgeV2.sol";
@@ -16,17 +17,20 @@ error OriginMustBeBridgeExtension();
 error SenderMustBeBridge();
 error UnclaimedAsset();
 
-contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializable {
+contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializable, ERC1967Upgrade {
     using SafeERC20 for IERC20;
 
     PolygonZkEVMBridgeV2 public bridge;
 
-    constructor() {}
+    constructor() {
+        _disableInitializers();
+    }
 
-    function initialize(address bridge_) external initializer {
+    function initialize(address bridge_, address admin_) external initializer {
         if (bridge_ == address(0)) revert InvalidAddress();
 
         bridge = PolygonZkEVMBridgeV2(bridge_);
+        _changeAdmin(admin_);
     }
 
     /// @notice Bridge and call from this function.
