@@ -5,4 +5,12 @@ libs = ["lib"]
 auto_detect_solc = true
 
 evm_version="shanghai"
-# See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
+fs_permissions = [{ access = "read", path = "./out"}]
+
+
+[rpc_endpoints]
+anvil = "http://127.0.0.1:8545"
+mainnet = "https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}"
+sepolia = "https://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_KEY}"
+polygon_zkevm = "https://polygonzkevm-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}"
+polygon_zkevm_testnet = "https://polygonzkevm-cardona.g.alchemy.com/v2/${ALCHEMY_KEY}"
