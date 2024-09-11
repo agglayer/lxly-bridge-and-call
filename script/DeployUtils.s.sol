@@ -21,13 +21,13 @@ contract DeployInitBridgeAndCall is Script {
 
         vm.startBroadcast(vm.envUint("DEPLOYER_PRIVATE_KEY"));
 
-        if(create2Deployer.codehash == '') {
+        if(create2Deployer.code.length == 0) {
             console.log("No create2Deployer.");
             create2DeployerDeployer.call{value: 0.1 ether}("");
             vm.broadcastRawTransaction(create2DeployerTx);
         }
 
-        if(multicall3.codehash == '') {
+        if(multicall3.code.length == 0) {
             console.log("No multicall3.");
             multicall3Deployer.call{value: 0.1 ether}("");
             vm.broadcastRawTransaction(multicall3Tx);

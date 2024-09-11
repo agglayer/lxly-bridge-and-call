@@ -16,8 +16,8 @@ contract DeployInitBridgeAndCall is Script {
 
     function run() external {
         // Check prerequisites
-        require(create2Deployer.codehash != '', "No create2 deployer.");
-        require(address(multicall3).codehash != '', "No multicall3.");
+        require(create2Deployer.code.length != 0, "No create2 deployer.");
+        require(address(multicall3).code.length != 0, "No multicall3.");
 
         // get the required env values
         // proxyAdmin can already have a custom value if it is used by tests
