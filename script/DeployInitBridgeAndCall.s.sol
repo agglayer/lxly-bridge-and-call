@@ -2,14 +2,12 @@ pragma solidity 0.8.20;
 
 import "forge-std/Script.sol";
 
-import "src/IMulticall3.sol";
 import "src/BridgeExtension.sol";
 import "src/BridgeExtensionProxy.sol";
 
 contract DeployInitBridgeAndCall is Script {
 
     address create2Deployer = 0x4e59b44847b379578588920cA78FbF26c0B4956C;
-    address multicall3 = 0xcA11bde05977b3631167028862bE2a173976CA11;
 
     address expectedProxyAddress;
     address proxyAdmin;
@@ -17,7 +15,6 @@ contract DeployInitBridgeAndCall is Script {
     function run() external {
         // Check prerequisites
         require(create2Deployer.code.length != 0, "No create2 deployer.");
-        require(address(multicall3).code.length != 0, "No multicall3.");
 
         // get the required env values
         // proxyAdmin can already have a custom value if it is used by tests
