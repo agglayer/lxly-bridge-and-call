@@ -31,6 +31,7 @@ contract DeployInitBridgeAndCall is Script {
 
         BridgeExtensionProxy beProxy = new BridgeExtensionProxy{salt: salt}(address(beImpl), proxyAdmin, initPayload);
         console.log("Deployed BridgeExtensionProxy to: ", address(beProxy));
+        expectedProxyAddress = address(beProxy);
 
         vm.stopBroadcast();
     }
