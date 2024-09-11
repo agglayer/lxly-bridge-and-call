@@ -20,8 +20,6 @@ contract DeployInitBridgeAndCall is Script {
         address bridgeAddr = vm.envAddress("ADDRESS_LXLY_BRIDGE");
         bytes32 salt = bytes32(uint256(1));
 
-        //bytes memory deployCodeProxy = vm.getCode("src/BridgeExtensionProxy.sol:BridgeExtensionProxy");
-
         vm.startBroadcast(vm.envUint("DEPLOYER_PRIVATE_KEY"));
 
         // deploy the implementation contract
@@ -34,15 +32,6 @@ contract DeployInitBridgeAndCall is Script {
         BridgeExtensionProxy beProxy = new BridgeExtensionProxy{salt: salt}(address(beImpl), proxyAdmin, initPayload);
         console.log("Deployed BridgeExtensionProxy to: ", address(beProxy));
 
-        // bytes memory proxyPayload = bytes.concat(deployCodeProxy, bytes32(uint256(uint160(address(beImpl)))), bytes32(uint256(uint160(proxyAdmin))), initPayload);
-        
-        // expectedProxyAddress = vm.computeCreate2Address(salt, keccak256(proxyPayload));
-        
-        // (bool success, bytes memory result) = create2Deployer.call(bytes.concat(salt, proxyPayload));
-        // if(!success) {
-        //     console.log("An error occured:");
-        //     console.logBytes(result);
-        // }
         vm.stopBroadcast();
     }
 
