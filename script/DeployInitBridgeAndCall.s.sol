@@ -10,19 +10,17 @@ contract DeployInitBridgeAndCall is Script {
     address create2Deployer = 0x4e59b44847b379578588920cA78FbF26c0B4956C;
 
     address expectedProxyAddress;
-    address proxyAdmin;
 
     function run() external {
         // Check prerequisites
         require(create2Deployer.code.length != 0, "No create2 deployer.");
 
         // get the required env values
-        // proxyAdmin can already have a custom value if it is used by tests
-        proxyAdmin = proxyAdmin == address(0) ? vm.envAddress("ADDRESS_PROXY_ADMIN") : proxyAdmin;
+        address proxyAdmin =  vm.envAddress("ADDRESS_PROXY_ADMIN");
         address bridgeAddr = vm.envAddress("ADDRESS_LXLY_BRIDGE");
         bytes32 salt = bytes32(uint256(1));
 
-        bytes memory deployCodeProxy = vm.getCode("src/BridgeExtensionProxy.sol:BridgeExtensionProxy");
+        //bytes memory deployCodeProxy = vm.getCode("src/BridgeExtensionProxy.sol:BridgeExtensionProxy");
 
         vm.startBroadcast(vm.envUint("DEPLOYER_PRIVATE_KEY"));
 
@@ -31,33 +29,24 @@ contract DeployInitBridgeAndCall is Script {
         BridgeExtension beImpl = new BridgeExtension{salt: salt}();
         console.log("Deployed BridgeExtension Implementation to: ", address(beImpl));
 
-        expectedProxyAddress = vm.computeCreate2Address(salt, keccak256(bytes.concat(deployCodeProxy, bytes32(uint256(uint160(address(beImpl)))))));
+        bytes memory initPayload = abi.encodeCall(BridgeExtension.initialize, (bridgeAddr));
+
+        BridgeExtensionProxy beProxy = new BridgeExtensionProxy{salt: salt}(address(beImpl), proxyAdmin, initPayload);
+        console.log("Deployed BridgeExtensionProxy to: ", address(beProxy));
+
+        // bytes memory proxyPayload = bytes.concat(deployCodeProxy, bytes32(uint256(uint160(address(beImpl)))), bytes32(uint256(uint160(proxyAdmin))), initPayload);
         
-        // deploy the proxy
-        bytes memory deployProxyPayload = bytes.concat(salt, deployCodeProxy, bytes32(uint256(uint160(address(beImpl)))));
-        IMulticall3.Call3 memory deployProxyCall;
-        deployProxyCall.target = create2Deployer;
-        deployProxyCall.allowFailure = false;
-        deployProxyCall.callData = deployProxyPayload;
-
-        // init the proxy
-        bytes memory initPayload = abi.encodeCall(BridgeExtension.initialize, (bridgeAddr, proxyAdmin));
-        IMulticall3.Call3 memory initProxyCall;
-        initProxyCall.target = expectedProxyAddress;
-        initProxyCall.allowFailure = false;
-        initProxyCall.callData = initPayload;
-
-        IMulticall3.Call3[] memory aggregatePayload = new IMulticall3.Call3[](2);
-        aggregatePayload[0] = deployProxyCall;
-        aggregatePayload[1] = initProxyCall;
-
-        IMulticall3(multicall3).aggregate3(aggregatePayload);
-
+        // expectedProxyAddress = vm.computeCreate2Address(salt, keccak256(proxyPayload));
+        
+        // (bool success, bytes memory result) = create2Deployer.call(bytes.concat(salt, proxyPayload));
+        // if(!success) {
+        //     console.log("An error occured:");
+        //     console.logBytes(result);
+        // }
         vm.stopBroadcast();
     }
 
-    function deployBridgeExtensionProxy(address _proxyAdmin) public returns (address) {
-        proxyAdmin = _proxyAdmin;
+    function deployBridgeExtensionProxy() public returns (address) {
         this.run();
         return expectedProxyAddress;
     }
