@@ -8,6 +8,8 @@ import "src/BridgeExtensionProxy.sol";
 contract DeployInitBridgeAndCall is Script {
 
     address create2Deployer = 0x4e59b44847b379578588920cA78FbF26c0B4956C;
+    address expectedProxy = 0xC34f256650CCa877b098f168305850b191e68B58;
+    address expectedImpl = 0x8DCc9123dfa96e522fD0b4E670D21bce86680253;
 
     address expectedProxyAddress;
 
@@ -34,6 +36,9 @@ contract DeployInitBridgeAndCall is Script {
         expectedProxyAddress = address(beProxy);
 
         vm.stopBroadcast();
+
+        require(expectedImpl.code.length != 0, "Implementation not deployed correctly!");
+        require(expectedProxy.code.length != 0, "Proxy not deployed correctly!");
     }
 
     function deployBridgeExtensionProxy() public returns (address) {
