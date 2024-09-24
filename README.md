@@ -34,14 +34,43 @@ NOTE: `testBridgeFromL2AndCallL1Uniswap` might fail due to exchange rates, if yo
 
 ### Deployment
 
-**NOTE: BridgeExtension (proxy) must be deployed to the same address in all chains**
+**NOTE: BridgeExtension (proxy) must be deployed to the same address on all chains**
 
-setup the `DEPLOYER_PRIVATE_KEY`, `ADDRESS_PROXY_ADMIN`, `ADDRESS_LXLY_BRIDGE` and run
+setup the `DEPLOYER_PRIVATE_KEY` and run
 
 ```
-export RPC=
-forge script script/DeployInitBridgeAndCall.s.sol:DeployInitBridgeAndCall --rpc-url ${RPC} -vvvvv --legacy --broadcast
+export RPC=yourRPCURL
+forge script script/DeployInitBridgeAndCall.s.sol --rpc-url ${RPC} -vvvvv --legacy --broadcast
 ```
+
+#### In case the script reports an error:
+
+**No create2 deployer.**  
+
+This means your chain doesn't have the keyless create2 deployer at: `0x4e59b44847b379578588920cA78FbF26c0B4956C`
+The deployer is documented here: https://github.com/Arachnid/deterministic-deployment-proxy   
+Because we get only one attempt at deploying this please be extra careful and first simulate the deployment:
+```
+forge script script/DeployUtils.s.sol --rpc-url ${RPC} -vvvvv --legacy
+```
+Make sure the deploy account has at least 0.2 eth as 0.1 will send to the keyless deployer account.  
+You can deploy it using:
+
+```
+forge script script/DeployUtils.s.sol --rpc-url ${RPC} -vvvvv --legacy --broadcast
+```
+
+**Implementation not deployed correctly! or Proxy not deployed correctly!**
+
+This likely means your local setup generated the wrong bytecode for the Proxy and Implementation contracts.  
+This can happen for a variety of reasons. In the `scripts/artifacts` directory are the expected bytecodes.
+As an alternative you can use:
+
+```
+forge script script/DirectDeployInitBridgeAndCall.s.sol --rpc-url ${RPC} -vvvvv --legacy --broadcast
+```
+
+It uses prepared tx data that uses the exact bytecode needed.
 
 ## Audit
 
