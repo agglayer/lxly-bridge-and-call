@@ -37,6 +37,7 @@ contract JumpPointLeavesNoTrace is BaseTest {
 
         // keep track of this for calculating the jumppoint address
         uint256 depositCount = MockBridgeV2(_bridge).depositCount();
+        uint32 originNetwork = MockBridgeV2(_bridge).networkID();
         bytes memory callData = abi.encodeWithSelector(bytes4(keccak256("doNothing()")));
 
         // alice bridges 1000 MATIC and calls TargetContract.doNothing()
@@ -51,7 +52,7 @@ contract JumpPointLeavesNoTrace is BaseTest {
 
         // check that no code remains at the jumppoint address
         vm.selectFork(_l2Fork);
-        address jpAddr = _computeJumpPointAddress(uint256(depositCount + 1), _l1Matic, _targetContract, _bob, callData);
+        address jpAddr = _computeJumpPointAddress(uint256(depositCount + 1), _l1Matic, originNetwork, _targetContract, _bob, callData);
         uint32 size;
         assembly {
             size := extcodesize(jpAddr)
@@ -66,6 +67,7 @@ contract JumpPointLeavesNoTrace is BaseTest {
     function _computeJumpPointAddress(
         uint256 dependsOnIndex,
         address originAssetAddress,
+        uint32 originNetwork,
         address callAddress,
         address fallbackAddress,
         bytes memory callData
@@ -87,7 +89,7 @@ contract JumpPointLeavesNoTrace is BaseTest {
             abi.encodePacked(
                 bytes1(0xff),
                 address(_l1BridgeExtension), // deployer = counterparty bridge extension
-                bytes32(dependsOnIndex), // salt = the depends on index
+                keccak256(abi.encodePacked(dependsOnIndex, originNetwork)), // salt = the depends on index
                 keccak256(bytecode)
             )
         );
