@@ -6,7 +6,6 @@ import "src/BridgeExtension.sol";
 import "src/BridgeExtensionProxy.sol";
 
 contract DeployInitBridgeAndCall is Script {
-
     address create2Deployer = 0x4e59b44847b379578588920cA78FbF26c0B4956C;
     address expectedProxy = 0x9D2e70107f993DC2375a6CBc1a8Dc8cb9Ec84AB1;
     address expectedImpl = 0x7bAbf98Cb7cbD2C85F13813409f495B9cF0Dd7D0;
@@ -17,16 +16,16 @@ contract DeployInitBridgeAndCall is Script {
         // Check prerequisites
         require(create2Deployer.code.length != 0, "No create2 deployer.");
 
-        if(expectedImpl.code.length != 0) {
+        if (expectedImpl.code.length != 0) {
             console.log("Implementation already deployed correctly!");
-            if(expectedProxy.code.length != 0) {
+            if (expectedProxy.code.length != 0) {
                 console.log("Proxy already deployed correctly!");
                 return;
             }
         }
 
         // get the required env values
-        address proxyAdmin =  vm.envAddress("ADDRESS_PROXY_ADMIN");
+        address proxyAdmin = vm.envAddress("ADDRESS_PROXY_ADMIN");
         address bridgeAddr = vm.envAddress("ADDRESS_LXLY_BRIDGE");
         bytes32 salt = bytes32(uint256(1));
 
@@ -41,7 +40,7 @@ contract DeployInitBridgeAndCall is Script {
         BridgeExtensionProxy beProxy = new BridgeExtensionProxy{salt: salt}(address(beImpl), proxyAdmin);
         console.log("Deployed BridgeExtensionProxy to: ", address(beProxy));
         expectedProxyAddress = address(beProxy);
-        
+
         vm.stopBroadcast();
 
         require(expectedImpl.code.length != 0, "Implementation not deployed correctly!");
