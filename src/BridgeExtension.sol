@@ -85,8 +85,9 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializabl
 
         bytes memory encodedMsg;
         if (token != address(0) && token == address(bridge.WETHToken())) {
+            // WETHs originNetwork is always 0 as it is a special case
             encodedMsg =
-                abi.encode(dependsOnIndex, callAddress, fallbackAddress, bridge.networkID(), address(0), callData);
+                abi.encode(dependsOnIndex, callAddress, fallbackAddress, 0, address(0), callData);
         } else if (token == address(0)) {
             // bridge the message (which gets encoded with extra data) to the extension on the destination network
             encodedMsg = abi.encode(
@@ -101,7 +102,7 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializabl
             // we need to encode the correct token network/address
             (uint32 assetOriginalNetwork, address assetOriginalAddr) = bridge.wrappedTokenToTokenInfo(token);
             if (assetOriginalAddr == address(0)) {
-                // only do this when the token is not from this network
+                // only do this when the token is from this network
                 assetOriginalNetwork = bridge.networkID();
                 assetOriginalAddr = token;
             }
@@ -126,7 +127,7 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializabl
     ) internal {
         // pre-compute the address of the JumpPoint contract so we can bridge the assets
         address jumpPointAddr = _computeJumpPointAddress(
-            dependsOnIndex, bridge.networkID(), address(0), callAddress, fallbackAddress, callData
+            dependsOnIndex, 0, address(0), callAddress, fallbackAddress, callData
         );
 
         // bridge the ERC20 assets - no need to approve, bridge will burn the tokens
@@ -165,7 +166,7 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializabl
             // we need to encode the correct token network/address
             (uint32 assetOriginalNetwork, address assetOriginalAddr) = bridge.wrappedTokenToTokenInfo(token);
             if (assetOriginalAddr == address(0)) {
-                // only do this when the token is not from this network
+                // only do this when the token is from this network
                 assetOriginalNetwork = bridge.networkID();
                 assetOriginalAddr = token;
 
