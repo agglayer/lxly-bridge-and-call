@@ -16,18 +16,12 @@ error OriginMustBeBridgeExtension();
 error SenderMustBeBridge();
 error UnclaimedAsset();
 
-contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver, Initializable {
+contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver {
     using SafeERC20 for IERC20;
 
-    PolygonZkEVMBridgeV2 public bridge;
+    PolygonZkEVMBridgeV2 public immutable bridge;
 
-    constructor() {
-        _disableInitializers();
-    }
-
-    function initialize(address bridge_) external initializer {
-        if (bridge_ == address(0)) revert InvalidAddress();
-
+    constructor(address bridge_) {
         bridge = PolygonZkEVMBridgeV2(bridge_);
     }
 

@@ -8,8 +8,8 @@ import "src/BridgeExtensionProxy.sol";
 contract DeployInitBridgeAndCall is Script {
 
     address create2Deployer = 0x4e59b44847b379578588920cA78FbF26c0B4956C;
-    address expectedProxy = 0xC34f256650CCa877b098f168305850b191e68B58;
-    address expectedImpl = 0x8DCc9123dfa96e522fD0b4E670D21bce86680253;
+    address expectedProxy = 0x54dDe1a66894c00D979011CEF03C7316D81dc271;
+    address expectedImpl = 0xE397a6dC8D0F63f8C1d95C6d177caBbb5d8E0911;
 
     address expectedProxyAddress;
 
@@ -25,16 +25,15 @@ contract DeployInitBridgeAndCall is Script {
         vm.startBroadcast(vm.envUint("DEPLOYER_PRIVATE_KEY"));
 
         // deploy the implementation contract
-        // Forge uses same create2 factory we do
-        BridgeExtension beImpl = new BridgeExtension{salt: salt}();
+        // Forge uses the create2 factory at 0x4e59b44847b379578588920cA78FbF26c0B4956C
+        BridgeExtension beImpl = new BridgeExtension{salt: salt}(bridgeAddr);
         console.log("Deployed BridgeExtension Implementation to: ", address(beImpl));
 
-        bytes memory initPayload = abi.encodeCall(BridgeExtension.initialize, (bridgeAddr));
-
-        BridgeExtensionProxy beProxy = new BridgeExtensionProxy{salt: salt}(address(beImpl), proxyAdmin, initPayload);
+        // deploy proxy
+        BridgeExtensionProxy beProxy = new BridgeExtensionProxy{salt: salt}(address(beImpl), proxyAdmin);
         console.log("Deployed BridgeExtensionProxy to: ", address(beProxy));
         expectedProxyAddress = address(beProxy);
-
+        
         vm.stopBroadcast();
 
         require(expectedImpl.code.length != 0, "Implementation not deployed correctly!");
