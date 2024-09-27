@@ -81,8 +81,9 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver {
 
         bytes memory encodedMsg;
         if (token != address(0) && token == address(bridge.WETHToken())) {
+            // WETHs originNetwork is always 0 as it is a special case
             encodedMsg =
-                abi.encode(dependsOnIndex, callAddress, fallbackAddress, bridge.networkID(), address(0), callData);
+                abi.encode(dependsOnIndex, callAddress, fallbackAddress, 0, address(0), callData);
         } else if (token == address(0)) {
             // bridge the message (which gets encoded with extra data) to the extension on the destination network
             encodedMsg = abi.encode(
@@ -97,7 +98,7 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver {
             // we need to encode the correct token network/address
             (uint32 assetOriginalNetwork, address assetOriginalAddr) = bridge.wrappedTokenToTokenInfo(token);
             if (assetOriginalAddr == address(0)) {
-                // only do this when the token is not from this network
+                // only do this when the token is from this network
                 assetOriginalNetwork = bridge.networkID();
                 assetOriginalAddr = token;
             }
@@ -122,7 +123,7 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver {
     ) internal {
         // pre-compute the address of the JumpPoint contract so we can bridge the assets
         address jumpPointAddr = _computeJumpPointAddress(
-            dependsOnIndex, bridge.networkID(), address(0), callAddress, fallbackAddress, callData
+            dependsOnIndex, 0, address(0), callAddress, fallbackAddress, callData
         );
 
         // bridge the ERC20 assets - no need to approve, bridge will burn the tokens
@@ -161,7 +162,7 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver {
             // we need to encode the correct token network/address
             (uint32 assetOriginalNetwork, address assetOriginalAddr) = bridge.wrappedTokenToTokenInfo(token);
             if (assetOriginalAddr == address(0)) {
-                // only do this when the token is not from this network
+                // only do this when the token is from this network
                 assetOriginalNetwork = bridge.networkID();
                 assetOriginalAddr = token;
 
@@ -196,12 +197,15 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver {
             abi.encode(address(bridge), assetNetwork, assetAddress, callAddress, fallbackAddress, callData)
         );
 
+        // Get origin network to guarantee a unique JumpPoint with dependsOnIndex (depositCount)
+        uint32 originNetwork = bridge.networkID();
+
         // this just follows the CREATE2 address computation algo
         bytes32 hash = keccak256(
             abi.encodePacked(
                 bytes1(0xff),
                 address(this), // deployer = counterparty bridge extension AKA "this"
-                bytes32(dependsOnIndex), // salt = the depends on index
+                keccak256(abi.encodePacked(dependsOnIndex, originNetwork)), // salt = the depends on index
                 keccak256(bytecode)
             )
         );
@@ -227,7 +231,7 @@ contract BridgeExtension is IBridgeAndCall, IBridgeMessageReceiver {
         if (!bridge.isClaimed(uint32(dependsOnIndex), originNetwork)) revert UnclaimedAsset();
 
         // the remaining bytes have the selector+args
-        new JumpPoint{salt: bytes32(dependsOnIndex)}(
+        new JumpPoint{salt: keccak256(abi.encodePacked(dependsOnIndex, originNetwork))}(
             address(bridge), assetOriginalNetwork, assetOriginalAddress, callAddress, fallbackAddress, callData
         );
     }
