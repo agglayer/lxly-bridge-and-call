@@ -8,14 +8,22 @@ import "src/BridgeExtensionProxy.sol";
 contract DeployInitBridgeAndCall is Script {
 
     address create2Deployer = 0x4e59b44847b379578588920cA78FbF26c0B4956C;
-    address expectedProxy = 0x54dDe1a66894c00D979011CEF03C7316D81dc271;
-    address expectedImpl = 0xE397a6dC8D0F63f8C1d95C6d177caBbb5d8E0911;
+    address expectedProxy = 0x9D2e70107f993DC2375a6CBc1a8Dc8cb9Ec84AB1;
+    address expectedImpl = 0x7bAbf98Cb7cbD2C85F13813409f495B9cF0Dd7D0;
 
     address expectedProxyAddress;
 
     function run() external {
         // Check prerequisites
         require(create2Deployer.code.length != 0, "No create2 deployer.");
+
+        if(expectedImpl.code.length != 0) {
+            console.log("Implementation already deployed correctly!");
+            if(expectedProxy.code.length != 0) {
+                console.log("Proxy already deployed correctly!");
+                return;
+            }
+        }
 
         // get the required env values
         address proxyAdmin =  vm.envAddress("ADDRESS_PROXY_ADMIN");
