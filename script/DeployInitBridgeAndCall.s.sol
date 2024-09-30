@@ -7,7 +7,7 @@ import "src/BridgeExtensionProxy.sol";
 
 contract DeployInitBridgeAndCall is Script {
     address create2Deployer = 0x4e59b44847b379578588920cA78FbF26c0B4956C;
-    address expectedProxy = 0x9D2e70107f993DC2375a6CBc1a8Dc8cb9Ec84AB1;
+    address expectedProxy = 0x64B20Eb25AEd030FD510EF93B9135278B152f6a6;
     address expectedImpl = 0x7bAbf98Cb7cbD2C85F13813409f495B9cF0Dd7D0;
 
     address expectedProxyAddress;
