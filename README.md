@@ -1,5 +1,17 @@
 # uLXLY BRIDGE AND CALL
 
+Bridge and Call contract for AggLayer's Unified Bridge. Allows bridging an asset w/ logic to be executed. Check the [Relevant Info section](https://github.com/AggLayer/lxly-bridge-and-call?tab=readme-ov-file#relevant-information).
+
+## Deployments
+
+Currently deployed to
+
+- Ethereum Mainnet https://etherscan.io/address/0x64b20eb25aed030fd510ef93b9135278b152f6a6
+- Polygon ZkEVM https://zkevm.polygonscan.com/address/0x64B20Eb25AEd030FD510EF93B9135278B152f6a6
+- X Layer https://www.oklink.com/xlayer/address/0x64b20eb25aed030fd510ef93b9135278b152f6a6/contract
+
+more to come.
+
 ## Testing and Deploying
 
 First, copy `.env.example` to `.env` and set the appropriate environment variables (annotated with TODOs).
