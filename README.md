@@ -9,6 +9,7 @@ Currently deployed to
 - Ethereum Mainnet https://etherscan.io/address/0x64b20eb25aed030fd510ef93b9135278b152f6a6
 - Polygon ZkEVM https://zkevm.polygonscan.com/address/0x64B20Eb25AEd030FD510EF93B9135278B152f6a6
 - X Layer https://www.oklink.com/xlayer/address/0x64b20eb25aed030fd510ef93b9135278b152f6a6/contract
+- Silicon https://scope.silicon.network/account/0x64b20eb25aed030fd510ef93b9135278b152f6a6
 
 more to come.
 
