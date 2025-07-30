@@ -6,11 +6,23 @@ Bridge and Call contract for AggLayer's Unified Bridge. Allows bridging an asset
 
 Currently deployed to
 
+#### Mainnet
+using lxly at: 0x2a3DD3EB832aF982ec71669E178424b10Dca2EDe
+
 - Ethereum Mainnet https://etherscan.io/address/0x64b20eb25aed030fd510ef93b9135278b152f6a6
+- Katana https://katanascan.com/address/0x64b20eb25aed030fd510ef93b9135278b152f6a6
 - Polygon ZkEVM https://zkevm.polygonscan.com/address/0x64B20Eb25AEd030FD510EF93B9135278B152f6a6
-- X Layer https://www.oklink.com/xlayer/address/0x64b20eb25aed030fd510ef93b9135278b152f6a6/contract
+- X Layer https://www.oklink.com/xlayer/address/0x64b20eb25aed030fd510ef93b9135278b152f6a6
 - Silicon https://scope.silicon.network/account/0x64b20eb25aed030fd510ef93b9135278b152f6a6
 - Lumia https://explorer.lumia.org/address/0x64B20Eb25AEd030FD510EF93B9135278B152f6a6
+
+
+#### Testnet
+using lxly at: 0x528e26b25a34a4A5d0dbDa1d57D318153d2ED582
+
+- Sepolia https://sepolia.etherscan.io/address/0x6c29d18c3c1c67c2b00747f8a6803d66a4fe3dec
+- Tatara https://explorer.tatara.katana.network/address/0x6c29d18c3c1c67c2b00747f8a6803d66a4fe3dec
+- Bokuto https://explorer-bokuto.katanarpc.com/address/0x6c29D18c3c1c67c2B00747f8A6803d66A4Fe3Dec
 
 more to come.
 
