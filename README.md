@@ -1,3 +1,8 @@
+# Deprecation Notice
+
+This repo is deprecated. Please use with caution as the code may contain vulnerabilities and bugs.  
+Development and maintenance have stopped. Deployments remain available, use at your own risk.
+
 # uLXLY BRIDGE AND CALL
 
 Bridge and Call contract for AggLayer's Unified Bridge. Allows bridging an asset w/ logic to be executed. Check the [Relevant Info section](https://github.com/AggLayer/lxly-bridge-and-call?tab=readme-ov-file#relevant-information).
